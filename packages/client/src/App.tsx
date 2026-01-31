@@ -171,10 +171,11 @@ function App() {
   const scaleY = ((height - 60) * 0.85) / roomHeight;
   const scale = Math.min(scaleX, scaleY, 1); // Don't scale up, only down
   
-  // Center the room on screen
+  // Position room 30% lower than center (more space for chat bubbles at top)
   const scaledRoomHeight = roomHeight * scale;
   const offsetX = width / 2;
-  const offsetY = (height - scaledRoomHeight) / 2 + 30; // Center vertically with slight top padding
+  const availableSpace = height - scaledRoomHeight;
+  const offsetY = availableSpace * 0.65 + 20; // 65% down (30% below center)
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
