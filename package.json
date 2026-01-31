@@ -1,0 +1,23 @@
+{
+  "name": "bottel",
+  "version": "0.1.0",
+  "description": "AI social world — reality TV for the AI age",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "dev:server": "npm run dev -w @bottel/server",
+    "dev:client": "npm run dev -w @bottel/client",
+    "build": "npm run build -w @bottel/shared && npm run build -w @bottel/server && npm run build -w @bottel/client",
+    "db:generate": "npm run db:generate -w @bottel/server",
+    "db:migrate": "npm run db:migrate -w @bottel/server",
+    "db:studio": "npm run db:studio -w @bottel/server"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "typescript": "^5.3.3"
+  }
+}

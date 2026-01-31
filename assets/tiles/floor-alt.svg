@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="32" viewBox="0 0 64 32">
+  <!-- Isometric diamond floor tile -->
+  <polygon 
+    points="32,0 64,16 32,32 0,16" 
+    fill="#4a4a6a" 
+    stroke="#5a5a7a" 
+    stroke-width="1"
+  />
+  <!-- Subtle grid pattern -->
+  <line x1="32" y1="0" x2="32" y2="32" stroke="#5a5a7a" stroke-width="0.5" opacity="0.3"/>
+  <line x1="0" y1="16" x2="64" y2="16" stroke="#5a5a7a" stroke-width="0.5" opacity="0.3"/>
+</svg>

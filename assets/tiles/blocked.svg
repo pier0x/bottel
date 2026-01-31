@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="48" viewBox="0 0 64 48">
+  <!-- Isometric cube/block -->
+  <!-- Top face -->
+  <polygon 
+    points="32,0 64,16 32,32 0,16" 
+    fill="#2d3748"
+  />
+  <!-- Left face -->
+  <polygon 
+    points="0,16 32,32 32,48 0,32" 
+    fill="#1a202c"
+  />
+  <!-- Right face -->
+  <polygon 
+    points="64,16 32,32 32,48 64,32" 
+    fill="#232a38"
+  />
+</svg>
