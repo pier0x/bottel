@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Stage, Container, Graphics, Text, Sprite } from '@pixi/react';
-import { TextStyle, Assets } from 'pixi.js';
+import { TextStyle } from 'pixi.js';
 import type { ServerMessage, RoomAgent, ChatMessage, Room } from '@bottel/shared';
 import { TILE_WIDTH, TILE_HEIGHT } from '@bottel/shared';
 
@@ -27,65 +27,43 @@ function getAvatarSprite(color: string): string {
   return colorMap[color.toUpperCase()] || colorMap[color] || 'blue';
 }
 
-interface ChatBubble {
+// Habbo-style floating chat bubble
+interface FloatingBubble {
   id: string;
   agentId: string;
+  agentName: string;
   content: string;
-  timestamp: number;
+  startX: number;      // Screen X position (from player)
+  startY: number;      // Fixed starting Y
+  timestamp: number;   // When created
 }
 
-// Preload assets
-const assetManifest = {
-  bundles: [
-    {
-      name: 'sprites',
-      assets: [
-        { alias: 'floor', src: '/tiles/floor.svg' },
-        { alias: 'floor-alt', src: '/tiles/floor-alt.svg' },
-        { alias: 'blocked', src: '/tiles/blocked.svg' },
-        { alias: 'avatar-blue', src: '/avatars/avatar-blue.svg' },
-        { alias: 'avatar-green', src: '/avatars/avatar-green.svg' },
-        { alias: 'avatar-amber', src: '/avatars/avatar-amber.svg' },
-        { alias: 'avatar-red', src: '/avatars/avatar-red.svg' },
-        { alias: 'avatar-purple', src: '/avatars/avatar-purple.svg' },
-        { alias: 'avatar-pink', src: '/avatars/avatar-pink.svg' },
-        { alias: 'avatar-cyan', src: '/avatars/avatar-cyan.svg' },
-        { alias: 'avatar-orange', src: '/avatars/avatar-orange.svg' },
-      ],
-    },
-  ],
-};
+const BUBBLE_START_Y = 80;      // Fixed Y start position from top
+const BUBBLE_FLOAT_SPEED = 15;  // Pixels per second to float up
+const BUBBLE_LIFETIME = 8000;   // 8 seconds before disappearing
 
 function App() {
   const [connected, setConnected] = useState(false);
-  const [assetsLoaded, setAssetsLoaded] = useState(false);
+  const [assetsLoaded, setAssetsLoaded] = useState(true); // Skip asset loading for now
   const [room, setRoom] = useState<Room | null>(null);
   const [agents, setAgents] = useState<RoomAgent[]>([]);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [chatBubbles, setChatBubbles] = useState<ChatBubble[]>([]);
+  const [floatingBubbles, setFloatingBubbles] = useState<FloatingBubble[]>([]);
+  const [currentTime, setCurrentTime] = useState(Date.now());
   const wsRef = useRef<WebSocket | null>(null);
 
-  // Load assets
+  // Update time for bubble animation
   useEffect(() => {
-    async function loadAssets() {
-      try {
-        await Assets.init({ manifest: assetManifest });
-        await Assets.loadBundle('sprites');
-        setAssetsLoaded(true);
-        console.log('Assets loaded');
-      } catch (e) {
-        console.error('Failed to load assets:', e);
-        // Continue without sprites
-        setAssetsLoaded(true);
-      }
-    }
-    loadAssets();
+    const interval = setInterval(() => {
+      setCurrentTime(Date.now());
+      // Remove old bubbles
+      setFloatingBubbles(prev => prev.filter(b => Date.now() - b.timestamp < BUBBLE_LIFETIME));
+    }, 50); // 20fps for smooth animation
+    return () => clearInterval(interval);
   }, []);
 
   // Connect to WebSocket as spectator
   useEffect(() => {
-    if (!assetsLoaded) return;
-
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const wsUrl = `${protocol}//${window.location.host}/ws`;
     console.log('Connecting to', wsUrl);
@@ -116,7 +94,7 @@ function App() {
     return () => {
       ws.close();
     };
-  }, [assetsLoaded]);
+  }, []);
 
   const handleMessage = useCallback((msg: ServerMessage) => {
     switch (msg.type) {
@@ -132,7 +110,6 @@ function App() {
 
       case 'agent_left':
         setAgents((prev) => prev.filter((a) => a.id !== msg.agentId));
-        setChatBubbles((prev) => prev.filter((b) => b.agentId !== msg.agentId));
         break;
 
       case 'agent_moved':
@@ -155,29 +132,29 @@ function App() {
             createdAt: new Date(msg.timestamp),
           },
         ]);
-        setChatBubbles((prev) => {
-          const filtered = prev.filter((b) => b.agentId !== msg.agentId);
-          return [
-            ...filtered,
-            {
-              id: msg.id,
-              agentId: msg.agentId,
-              content: msg.content,
-              timestamp: Date.now(),
-            },
-          ];
+        
+        // Create floating bubble at player's current position
+        setAgents(currentAgents => {
+          const agent = currentAgents.find(a => a.id === msg.agentId);
+          if (agent) {
+            const screenPos = toScreen(agent.x, agent.y);
+            setFloatingBubbles(prev => [
+              ...prev,
+              {
+                id: msg.id,
+                agentId: msg.agentId,
+                agentName: msg.agentName,
+                content: msg.content,
+                startX: screenPos.x,
+                startY: BUBBLE_START_Y,
+                timestamp: Date.now(),
+              },
+            ]);
+          }
+          return currentAgents;
         });
         break;
     }
-  }, []);
-
-  // Remove old chat bubbles
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const now = Date.now();
-      setChatBubbles((prev) => prev.filter((b) => now - b.timestamp < 5000));
-    }, 1000);
-    return () => clearInterval(interval);
   }, []);
 
   const width = typeof window !== 'undefined' ? window.innerWidth : 1200;
@@ -238,27 +215,103 @@ function App() {
         height={height}
         options={{ background: 0x1a1a2e, antialias: true }}
       >
+        {/* Floating chat bubbles layer (behind room, fixed position) */}
+        <Container x={offsetX} y={0}>
+          {floatingBubbles.map((bubble) => {
+            const age = currentTime - bubble.timestamp;
+            const floatOffset = (age / 1000) * BUBBLE_FLOAT_SPEED;
+            const opacity = Math.max(0, 1 - (age / BUBBLE_LIFETIME));
+            const y = bubble.startY - floatOffset;
+            
+            return (
+              <Container key={bubble.id} x={bubble.startX} y={y} alpha={opacity}>
+                <Graphics
+                  draw={(g) => {
+                    g.clear();
+                    const text = bubble.content.slice(0, 40);
+                    const bubbleWidth = Math.min(text.length * 7 + 24, 280);
+                    const bubbleHeight = 32;
+                    
+                    // Bubble background
+                    g.beginFill(0xffffff, 0.95);
+                    g.lineStyle(2, 0x000000, 0.3);
+                    g.drawRoundedRect(-bubbleWidth / 2, -bubbleHeight / 2, bubbleWidth, bubbleHeight, 10);
+                    g.endFill();
+                    
+                    // Pointer triangle
+                    g.beginFill(0xffffff, 0.95);
+                    g.lineStyle(2, 0x000000, 0.3);
+                    g.moveTo(-6, bubbleHeight / 2 - 2);
+                    g.lineTo(0, bubbleHeight / 2 + 8);
+                    g.lineTo(6, bubbleHeight / 2 - 2);
+                    g.endFill();
+                  }}
+                />
+                {/* Agent name */}
+                <Text
+                  text={bubble.agentName}
+                  x={0}
+                  y={-6}
+                  anchor={{ x: 0.5, y: 0.5 }}
+                  style={new TextStyle({
+                    fontSize: 10,
+                    fill: 0x666666,
+                    fontFamily: 'sans-serif',
+                    fontWeight: 'bold',
+                  })}
+                />
+                {/* Message content */}
+                <Text
+                  text={
+                    bubble.content.length > 40
+                      ? bubble.content.slice(0, 40) + '...'
+                      : bubble.content
+                  }
+                  x={0}
+                  y={6}
+                  anchor={{ x: 0.5, y: 0.5 }}
+                  style={new TextStyle({
+                    fontSize: 11,
+                    fill: 0x1a1a2e,
+                    fontFamily: 'sans-serif',
+                  })}
+                />
+              </Container>
+            );
+          })}
+        </Container>
+
+        {/* Room container */}
         <Container x={offsetX} y={offsetY}>
           {/* Render floor tiles */}
           {room &&
             room.tiles.map((row, y) =>
               row.map((tile, x) => {
                 const pos = toScreen(x, y);
-                const useAlt = (x + y) % 2 === 0;
                 
                 if (tile === 0) {
-                  // Walkable floor
+                  // Walkable floor - checkerboard pattern
+                  const isAlt = (x + y) % 2 === 0;
                   return (
-                    <Sprite
+                    <Graphics
                       key={`tile-${x}-${y}`}
-                      image={useAlt ? '/tiles/floor-alt.svg' : '/tiles/floor.svg'}
                       x={pos.x}
                       y={pos.y}
-                      anchor={{ x: 0.5, y: 0.5 }}
+                      draw={(g) => {
+                        g.clear();
+                        g.beginFill(isAlt ? 0x3d3d5c : 0x4a4a6a);
+                        g.lineStyle(1, 0x5a5a7a, 0.5);
+                        g.moveTo(0, -TILE_HEIGHT / 2);
+                        g.lineTo(TILE_WIDTH / 2, 0);
+                        g.lineTo(0, TILE_HEIGHT / 2);
+                        g.lineTo(-TILE_WIDTH / 2, 0);
+                        g.closePath();
+                        g.endFill();
+                      }}
                     />
                   );
                 } else {
-                  // Blocked/wall - just draw darker
+                  // Blocked/wall
                   return (
                     <Graphics
                       key={`tile-${x}-${y}`}
@@ -286,25 +339,42 @@ function App() {
             .sort((a, b) => a.x + a.y - (b.x + b.y))
             .map((agent) => {
               const pos = toScreen(agent.x, agent.y);
-              const bubble = chatBubbles.find((b) => b.agentId === agent.id);
               const spriteColor = getAvatarSprite(agent.avatar.bodyColor);
 
               return (
                 <Container key={agent.id} x={pos.x} y={pos.y - 20}>
-                  {/* Avatar sprite */}
-                  <Sprite
-                    image={`/avatars/avatar-${spriteColor}.svg`}
-                    anchor={{ x: 0.5, y: 1 }}
-                    scale={1.2}
+                  {/* Avatar body */}
+                  <Graphics
+                    draw={(g) => {
+                      g.clear();
+                      const color = parseInt(agent.avatar.bodyColor.slice(1), 16);
+                      // Shadow
+                      g.beginFill(0x000000, 0.3);
+                      g.drawEllipse(0, 10, 14, 6);
+                      g.endFill();
+                      // Body
+                      g.beginFill(color);
+                      g.drawEllipse(0, -8, 14, 18);
+                      g.endFill();
+                      // Head
+                      g.beginFill(0xfcd5b8);
+                      g.drawCircle(0, -32, 12);
+                      g.endFill();
+                      // Eyes
+                      g.beginFill(0x333333);
+                      g.drawCircle(-4, -33, 2);
+                      g.drawCircle(4, -33, 2);
+                      g.endFill();
+                    }}
                   />
                   
                   {/* Name tag */}
-                  <Container y={-70}>
+                  <Container y={-52}>
                     <Graphics
                       draw={(g) => {
                         g.clear();
                         const nameWidth = agent.name.length * 7 + 12;
-                        g.beginFill(0x000000, 0.6);
+                        g.beginFill(0x000000, 0.7);
                         g.drawRoundedRect(-nameWidth / 2, -10, nameWidth, 18, 4);
                         g.endFill();
                       }}
@@ -320,40 +390,6 @@ function App() {
                       })}
                     />
                   </Container>
-
-                  {/* Chat bubble */}
-                  {bubble && (
-                    <Container y={-95}>
-                      <Graphics
-                        draw={(g) => {
-                          g.clear();
-                          const text = bubble.content.slice(0, 30);
-                          const bubbleWidth = Math.min(text.length * 7 + 20, 220);
-                          // Bubble
-                          g.beginFill(0xffffff, 0.95);
-                          g.drawRoundedRect(-bubbleWidth / 2, -14, bubbleWidth, 26, 8);
-                          // Pointer
-                          g.moveTo(-4, 12);
-                          g.lineTo(0, 20);
-                          g.lineTo(4, 12);
-                          g.endFill();
-                        }}
-                      />
-                      <Text
-                        text={
-                          bubble.content.length > 30
-                            ? bubble.content.slice(0, 30) + '...'
-                            : bubble.content
-                        }
-                        anchor={0.5}
-                        style={new TextStyle({
-                          fontSize: 11,
-                          fill: 0x1a1a2e,
-                          fontFamily: 'sans-serif',
-                        })}
-                      />
-                    </Container>
-                  )}
                 </Container>
               );
             })}
