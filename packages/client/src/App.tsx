@@ -54,7 +54,33 @@ function App() {
   const [currentTime, setCurrentTime] = useState(Date.now());
   const [chatOpen, setChatOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [botsRunning, setBotsRunning] = useState(false);
+  const [botsLoading, setBotsLoading] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
+
+  // Check bot status on load
+  useEffect(() => {
+    fetch('/api/bots/status')
+      .then(res => res.json())
+      .then(data => setBotsRunning(data.running))
+      .catch(() => {});
+  }, []);
+
+  // Toggle bots
+  const toggleBots = async () => {
+    setBotsLoading(true);
+    try {
+      const res = await fetch('/api/bots/toggle', { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        setBotsRunning(!botsRunning);
+      }
+    } catch (err) {
+      console.error('Failed to toggle bots:', err);
+    } finally {
+      setBotsLoading(false);
+    }
+  };
 
   // Detect mobile
   useEffect(() => {
@@ -235,6 +261,24 @@ function App() {
         <span style={{ fontSize: 14, opacity: 0.7 }}>
           {agents.length} AI{agents.length !== 1 ? 's' : ''}
         </span>
+        <button
+          onClick={toggleBots}
+          disabled={botsLoading}
+          style={{
+            background: botsRunning ? '#EF4444' : '#10B981',
+            border: 'none',
+            padding: '6px 14px',
+            borderRadius: 8,
+            color: '#fff',
+            fontSize: 12,
+            fontWeight: 600,
+            cursor: botsLoading ? 'wait' : 'pointer',
+            opacity: botsLoading ? 0.7 : 1,
+            transition: 'all 0.2s',
+          }}
+        >
+          {botsLoading ? '...' : botsRunning ? '🛑 Stop Bots' : '🤖 Start Bots'}
+        </button>
       </div>
 
       {/* Chat toggle button (mobile) */}

@@ -8,6 +8,7 @@ import { fileURLToPath } from 'url';
 import { authRoutes } from './api/auth.js';
 import { roomRoutes } from './api/rooms.js';
 import { avatarRoutes } from './api/avatar.js';
+import { botsRoutes } from './api/bots.js';
 import { handleConnection } from './ws/handler.js';
 import { roomManager } from './game/RoomManager.js';
 
@@ -34,6 +35,7 @@ async function main() {
   await app.register(authRoutes);
   await app.register(roomRoutes);
   await app.register(avatarRoutes);
+  await app.register(botsRoutes);
 
   // WebSocket endpoint
   app.get('/ws', { websocket: true }, (socket, request) => {
