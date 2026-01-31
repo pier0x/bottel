@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Stage, Container, Graphics, Text, Sprite } from '@pixi/react';
+import { Stage, Container, Graphics, Text } from '@pixi/react';
 import { TextStyle } from 'pixi.js';
 import type { ServerMessage, RoomAgent, ChatMessage, Room } from '@bottel/shared';
 import { TILE_WIDTH, TILE_HEIGHT } from '@bottel/shared';
@@ -33,32 +33,40 @@ interface FloatingBubble {
   agentId: string;
   agentName: string;
   content: string;
-  startX: number;      // Screen X position (from player)
-  startY: number;      // Fixed starting Y
-  timestamp: number;   // When created
+  startX: number;
+  startY: number;
+  timestamp: number;
 }
 
-const BUBBLE_START_Y = 80;      // Fixed Y start position from top
-const BUBBLE_FLOAT_SPEED = 15;  // Pixels per second to float up
-const BUBBLE_LIFETIME = 8000;   // 8 seconds before disappearing
+const BUBBLE_START_Y = 80;
+const BUBBLE_FLOAT_SPEED = 15;
+const BUBBLE_LIFETIME = 8000;
 
 function App() {
   const [connected, setConnected] = useState(false);
-  const [assetsLoaded, setAssetsLoaded] = useState(true); // Skip asset loading for now
   const [room, setRoom] = useState<Room | null>(null);
   const [agents, setAgents] = useState<RoomAgent[]>([]);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [floatingBubbles, setFloatingBubbles] = useState<FloatingBubble[]>([]);
   const [currentTime, setCurrentTime] = useState(Date.now());
+  const [chatOpen, setChatOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
+
+  // Detect mobile
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Update time for bubble animation
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentTime(Date.now());
-      // Remove old bubbles
       setFloatingBubbles(prev => prev.filter(b => Date.now() - b.timestamp < BUBBLE_LIFETIME));
-    }, 50); // 20fps for smooth animation
+    }, 50);
     return () => clearInterval(interval);
   }, []);
 
@@ -73,7 +81,6 @@ function App() {
     ws.onopen = () => {
       console.log('Connected to Bottel');
       setConnected(true);
-      // Spectators join lobby without auth
       ws.send(JSON.stringify({ type: 'join', roomId: 'lobby' }));
     };
 
@@ -133,7 +140,6 @@ function App() {
           },
         ]);
         
-        // Create floating bubble at player's current position
         setAgents(currentAgents => {
           const agent = currentAgents.find(a => a.id === msg.agentId);
           if (agent) {
@@ -162,23 +168,6 @@ function App() {
   const offsetX = width / 2;
   const offsetY = 150;
 
-  if (!assetsLoaded) {
-    return (
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        width: '100vw',
-        height: '100vh',
-        background: '#1a1a2e',
-        color: '#fff',
-        fontSize: 24,
-      }}>
-        Loading Bottel...
-      </div>
-    );
-  }
-
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
       {/* Header */}
@@ -193,7 +182,7 @@ function App() {
           gap: 12,
         }}
       >
-        <h1 style={{ fontSize: 24, fontWeight: 'bold' }}>🏨 Bottel</h1>
+        <h1 style={{ fontSize: isMobile ? 18 : 24, fontWeight: 'bold' }}>🏨 Bottel</h1>
         <span
           style={{
             background: connected ? '#10B981' : '#EF4444',
@@ -205,9 +194,36 @@ function App() {
           {connected ? 'LIVE' : 'OFFLINE'}
         </span>
         <span style={{ fontSize: 14, opacity: 0.7 }}>
-          {agents.length} AI{agents.length !== 1 ? 's' : ''} online
+          {agents.length} AI{agents.length !== 1 ? 's' : ''}
         </span>
       </div>
+
+      {/* Chat toggle button (mobile) */}
+      {isMobile && (
+        <button
+          onClick={() => setChatOpen(!chatOpen)}
+          style={{
+            position: 'absolute',
+            bottom: 16,
+            right: 16,
+            zIndex: 20,
+            width: 56,
+            height: 56,
+            borderRadius: '50%',
+            background: chatOpen ? '#EF4444' : '#3B82F6',
+            border: 'none',
+            color: '#fff',
+            fontSize: 24,
+            cursor: 'pointer',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          {chatOpen ? '✕' : '💬'}
+        </button>
+      )}
 
       {/* PixiJS Canvas */}
       <Stage
@@ -215,7 +231,7 @@ function App() {
         height={height}
         options={{ background: 0x1a1a2e, antialias: true }}
       >
-        {/* Floating chat bubbles layer (behind room, fixed position) */}
+        {/* Floating chat bubbles layer */}
         <Container x={offsetX} y={0}>
           {floatingBubbles.map((bubble) => {
             const age = currentTime - bubble.timestamp;
@@ -232,13 +248,11 @@ function App() {
                     const bubbleWidth = Math.min(text.length * 7 + 24, 280);
                     const bubbleHeight = 32;
                     
-                    // Bubble background
                     g.beginFill(0xffffff, 0.95);
                     g.lineStyle(2, 0x000000, 0.3);
                     g.drawRoundedRect(-bubbleWidth / 2, -bubbleHeight / 2, bubbleWidth, bubbleHeight, 10);
                     g.endFill();
                     
-                    // Pointer triangle
                     g.beginFill(0xffffff, 0.95);
                     g.lineStyle(2, 0x000000, 0.3);
                     g.moveTo(-6, bubbleHeight / 2 - 2);
@@ -247,7 +261,6 @@ function App() {
                     g.endFill();
                   }}
                 />
-                {/* Agent name */}
                 <Text
                   text={bubble.agentName}
                   x={0}
@@ -260,7 +273,6 @@ function App() {
                     fontWeight: 'bold',
                   })}
                 />
-                {/* Message content */}
                 <Text
                   text={
                     bubble.content.length > 40
@@ -290,7 +302,6 @@ function App() {
                 const pos = toScreen(x, y);
                 
                 if (tile === 0) {
-                  // Walkable floor - checkerboard pattern
                   const isAlt = (x + y) % 2 === 0;
                   return (
                     <Graphics
@@ -311,7 +322,6 @@ function App() {
                     />
                   );
                 } else {
-                  // Blocked/wall
                   return (
                     <Graphics
                       key={`tile-${x}-${y}`}
@@ -333,34 +343,28 @@ function App() {
               })
             )}
 
-          {/* Render agents (sorted for depth) */}
+          {/* Render agents */}
           {agents
             .slice()
             .sort((a, b) => a.x + a.y - (b.x + b.y))
             .map((agent) => {
               const pos = toScreen(agent.x, agent.y);
-              const spriteColor = getAvatarSprite(agent.avatar.bodyColor);
 
               return (
                 <Container key={agent.id} x={pos.x} y={pos.y - 20}>
-                  {/* Avatar body */}
                   <Graphics
                     draw={(g) => {
                       g.clear();
                       const color = parseInt(agent.avatar.bodyColor.slice(1), 16);
-                      // Shadow
                       g.beginFill(0x000000, 0.3);
                       g.drawEllipse(0, 10, 14, 6);
                       g.endFill();
-                      // Body
                       g.beginFill(color);
                       g.drawEllipse(0, -8, 14, 18);
                       g.endFill();
-                      // Head
                       g.beginFill(0xfcd5b8);
                       g.drawCircle(0, -32, 12);
                       g.endFill();
-                      // Eyes
                       g.beginFill(0x333333);
                       g.drawCircle(-4, -33, 2);
                       g.drawCircle(4, -33, 2);
@@ -368,7 +372,6 @@ function App() {
                     }}
                   />
                   
-                  {/* Name tag */}
                   <Container y={-52}>
                     <Graphics
                       draw={(g) => {
@@ -396,26 +399,43 @@ function App() {
         </Container>
       </Stage>
 
-      {/* Chat log sidebar */}
+      {/* Chat log - desktop: always visible, mobile: slide-up panel */}
       <div
         style={{
           position: 'absolute',
-          bottom: 16,
-          right: 16,
-          width: 320,
-          maxHeight: 300,
-          background: 'rgba(0,0,0,0.7)',
-          borderRadius: 12,
-          padding: 16,
+          bottom: isMobile ? 0 : 16,
+          right: isMobile ? 0 : 16,
+          left: isMobile ? 0 : 'auto',
+          width: isMobile ? '100%' : 320,
+          maxHeight: isMobile ? (chatOpen ? '60vh' : 0) : 300,
+          height: isMobile ? (chatOpen ? '60vh' : 0) : 'auto',
+          background: 'rgba(0,0,0,0.85)',
+          borderRadius: isMobile ? '16px 16px 0 0' : 12,
+          padding: isMobile ? (chatOpen ? 16 : 0) : 16,
+          paddingBottom: isMobile && chatOpen ? 80 : (isMobile ? 0 : 16),
           overflowY: 'auto',
-          zIndex: 10,
+          zIndex: 15,
           backdropFilter: 'blur(8px)',
+          transition: 'max-height 0.3s ease, height 0.3s ease, padding 0.3s ease',
+          display: isMobile && !chatOpen ? 'none' : 'block',
         }}
       >
-        <h3 style={{ marginBottom: 12, fontSize: 14, opacity: 0.7, textTransform: 'uppercase', letterSpacing: 1 }}>
+        <h3 style={{ 
+          marginBottom: 12, 
+          fontSize: 14, 
+          opacity: 0.7, 
+          textTransform: 'uppercase', 
+          letterSpacing: 1,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        }}>
           Chat Log
+          {isMobile && (
+            <span style={{ fontSize: 12, opacity: 0.5 }}>{messages.length} messages</span>
+          )}
         </h3>
-        {messages.slice(-20).map((m) => (
+        {messages.slice(-30).map((m) => (
           <div key={m.id} style={{ marginBottom: 8, fontSize: 13 }}>
             <span style={{ color: '#10B981', fontWeight: 600 }}>{m.agentName}</span>
             <span style={{ opacity: 0.5 }}>: </span>
@@ -429,8 +449,8 @@ function App() {
         )}
       </div>
 
-      {/* Room info */}
-      {room && (
+      {/* Room info - hide on mobile when chat is open */}
+      {room && !(isMobile && chatOpen) && (
         <div
           style={{
             position: 'absolute',
@@ -438,13 +458,13 @@ function App() {
             right: 16,
             background: 'rgba(0,0,0,0.7)',
             borderRadius: 12,
-            padding: 16,
+            padding: isMobile ? 10 : 16,
             zIndex: 10,
             backdropFilter: 'blur(8px)',
           }}
         >
-          <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 4 }}>{room.name}</div>
-          <div style={{ fontSize: 12, opacity: 0.6 }}>{room.width}×{room.height} tiles</div>
+          <div style={{ fontSize: isMobile ? 14 : 16, fontWeight: 600, marginBottom: 4 }}>{room.name}</div>
+          <div style={{ fontSize: 12, opacity: 0.6 }}>{room.width}×{room.height}</div>
         </div>
       )}
     </div>
