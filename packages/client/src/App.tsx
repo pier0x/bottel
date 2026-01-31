@@ -150,8 +150,17 @@ function App() {
 
   const width = typeof window !== 'undefined' ? window.innerWidth : 1200;
   const height = typeof window !== 'undefined' ? window.innerHeight : 800;
+  
+  // Calculate scale to fit room on screen
+  // Room is 20x20 tiles, ~640px wide in isometric view
+  const roomWidth = 20 * TILE_WIDTH; // 1280px at full scale
+  const roomHeight = 20 * TILE_HEIGHT + 200; // ~840px including avatars
+  const scaleX = (width * 0.9) / roomWidth;
+  const scaleY = ((height - 100) * 0.8) / roomHeight;
+  const scale = Math.min(scaleX, scaleY, 1); // Don't scale up, only down
+  
   const offsetX = width / 2;
-  const offsetY = 150;
+  const offsetY = isMobile ? 80 : 150;
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
@@ -216,8 +225,8 @@ function App() {
         height={height}
         options={{ background: 0x1a1a2e, antialias: true }}
       >
-        {/* Floating chat bubbles layer */}
-        <Container x={offsetX} y={0}>
+        {/* Floating chat bubbles layer - scaled to match room */}
+        <Container x={offsetX} y={0} scale={{ x: scale, y: 1 }}>
           {floatingBubbles.map((bubble) => {
             const age = currentTime - bubble.timestamp;
             const floatOffset = (age / 1000) * BUBBLE_FLOAT_SPEED;
@@ -278,8 +287,8 @@ function App() {
           })}
         </Container>
 
-        {/* Room container */}
-        <Container x={offsetX} y={offsetY}>
+        {/* Room container - scaled to fit screen */}
+        <Container x={offsetX} y={offsetY} scale={scale}>
           {/* Render floor tiles */}
           {room &&
             room.tiles.map((row, y) =>
