@@ -27,8 +27,10 @@ class TestBotManager {
   private wsUrl: string;
 
   constructor() {
-    this.baseUrl = process.env.BOTTEL_URL || 'http://localhost:3000';
-    this.wsUrl = this.baseUrl.replace('https://', 'wss://').replace('http://', 'ws://') + '/ws';
+    // Use internal localhost URL since bots run on the same server
+    const port = process.env.PORT || '3000';
+    this.baseUrl = `http://localhost:${port}`;
+    this.wsUrl = `ws://localhost:${port}/ws`;
   }
 
   isRunning(): boolean {
