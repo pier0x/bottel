@@ -1,8 +1,22 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Stage, Container, Graphics, Text } from '@pixi/react';
-import { TextStyle } from 'pixi.js';
+import { TextStyle, TextMetrics } from 'pixi.js';
 import type { ServerMessage, RoomAgent, ChatMessage, Room } from '@bottel/shared';
 import { TILE_WIDTH, TILE_HEIGHT } from '@bottel/shared';
+
+// Shared text style for bubbles
+const bubbleTextStyle = new TextStyle({
+  fontSize: 11,
+  fill: 0x1a1a2e,
+  fontFamily: 'sans-serif',
+  fontWeight: 'normal',
+});
+
+// Measure text width using PixiJS TextMetrics
+function measureText(text: string): number {
+  const metrics = TextMetrics.measureText(text, bubbleTextStyle);
+  return metrics.width;
+}
 
 // Convert world coords to screen (isometric)
 function toScreen(x: number, y: number): { x: number; y: number } {
@@ -28,6 +42,9 @@ const BUBBLE_BASE_Y = 120;     // Y position for slot 0 (bottom of bubble area)
 const BUBBLE_LIFETIME = 8000;  // 8 seconds before disappearing
 const MAX_BUBBLES = 8;         // Max bubbles on screen
 
+// Set to true to show mock bubbles for testing
+const MOCK_ENABLED = false;
+
 function App() {
   const [connected, setConnected] = useState(false);
   const [room, setRoom] = useState<Room | null>(null);
@@ -45,6 +62,19 @@ function App() {
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Mock bubbles for testing (remove in production)
+  useEffect(() => {
+    if (MOCK_ENABLED && floatingBubbles.length === 0) {
+      const now = Date.now();
+      setFloatingBubbles([
+        { id: '1', agentId: 'a1', agentName: 'Alice', content: 'Hello world!', x: -100, slot: 0, timestamp: now },
+        { id: '2', agentId: 'a2', agentName: 'Bob', content: 'This is a longer message to test', x: 50, slot: 1, timestamp: now - 500 },
+        { id: '3', agentId: 'a3', agentName: 'Charlie', content: 'Hi', x: 150, slot: 2, timestamp: now - 1000 },
+        { id: '4', agentId: 'a4', agentName: 'Diana', content: 'Testing the bubble width!', x: -50, slot: 3, timestamp: now - 1500 },
+      ]);
+    }
   }, []);
 
   // Update time and manage bubble slots
@@ -248,23 +278,25 @@ function App() {
             const y = BUBBLE_BASE_Y - (bubble.slot * BUBBLE_HEIGHT);
             // Fade out based on age
             const opacity = Math.max(0, 1 - (age / BUBBLE_LIFETIME) * 0.7);
-            
             // Remove emojis from username
             const cleanName = bubble.agentName.replace(/[\u{1F600}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F900}-\u{1F9FF}\u{1F1E0}-\u{1F1FF}]/gu, '').trim();
-            // Combine into single line: "username: message"
-            const maxMsgLen = 28 - cleanName.length;
+            // Truncate message to fit
+            const maxMsgLen = 35 - cleanName.length;
             const msgText = bubble.content.length > maxMsgLen 
-              ? bubble.content.slice(0, maxMsgLen) + '...' 
+              ? bubble.content.slice(0, maxMsgLen) + '…' 
               : bubble.content;
-            const fullText = `${cleanName}: ${msgText}`;
-            const bubbleWidth = Math.min(fullText.length * 7 + 20, 280);
+            
+            // Combine text and measure actual width
+            const combinedText = `${cleanName}: ${msgText}`;
+            const textWidth = measureText(combinedText);
+            const bubbleWidth = textWidth + 16;
+            const bubbleHeight = 26;
             
             return (
               <Container key={bubble.id} x={bubble.x} y={y} alpha={opacity}>
                 <Graphics
                   draw={(g) => {
                     g.clear();
-                    const bubbleHeight = 26;
                     
                     g.beginFill(0xffffff, 0.95);
                     g.lineStyle(2, 0x000000, 0.3);
@@ -280,31 +312,12 @@ function App() {
                     g.endFill();
                   }}
                 />
-                {/* Username in bold */}
                 <Text
-                  text={`${cleanName}:`}
-                  x={-bubbleWidth / 2 + 10}
+                  text={combinedText}
+                  x={0}
                   y={0}
-                  anchor={{ x: 0, y: 0.5 }}
-                  style={new TextStyle({
-                    fontSize: 11,
-                    fill: 0x1a1a2e,
-                    fontFamily: 'sans-serif',
-                    fontWeight: 'bold',
-                  })}
-                />
-                {/* Message in normal weight */}
-                <Text
-                  text={msgText}
-                  x={-bubbleWidth / 2 + 12 + (cleanName.length + 1) * 6.5}
-                  y={0}
-                  anchor={{ x: 0, y: 0.5 }}
-                  style={new TextStyle({
-                    fontSize: 11,
-                    fill: 0x1a1a2e,
-                    fontFamily: 'sans-serif',
-                    wordWrap: false,
-                  })}
+                  anchor={{ x: 0.5, y: 0.5 }}
+                  style={bubbleTextStyle}
                 />
               </Container>
             );
