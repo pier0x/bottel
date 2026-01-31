@@ -12,21 +12,6 @@ function toScreen(x: number, y: number): { x: number; y: number } {
   };
 }
 
-// Map color hex to avatar sprite name
-function getAvatarSprite(color: string): string {
-  const colorMap: Record<string, string> = {
-    '#3B82F6': 'blue',
-    '#10B981': 'green',
-    '#F59E0B': 'amber',
-    '#EF4444': 'red',
-    '#8B5CF6': 'purple',
-    '#EC4899': 'pink',
-    '#06B6D4': 'cyan',
-    '#F97316': 'orange',
-  };
-  return colorMap[color.toUpperCase()] || colorMap[color] || 'blue';
-}
-
 // Habbo-style floating chat bubble
 interface FloatingBubble {
   id: string;
@@ -472,4 +457,3 @@ function App() {
 }
 
 export default App;
-// force rebuild Sat Jan 31 12:15:47 UTC 2026
