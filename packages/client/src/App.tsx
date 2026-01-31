@@ -152,15 +152,17 @@ function App() {
   const height = typeof window !== 'undefined' ? window.innerHeight : 800;
   
   // Calculate scale to fit room on screen
-  // Room is 20x20 tiles, ~640px wide in isometric view
+  // Room is 20x20 tiles, isometric diamond shape
   const roomWidth = 20 * TILE_WIDTH; // 1280px at full scale
-  const roomHeight = 20 * TILE_HEIGHT + 200; // ~840px including avatars
-  const scaleX = (width * 0.9) / roomWidth;
-  const scaleY = ((height - 100) * 0.8) / roomHeight;
+  const roomHeight = 20 * TILE_HEIGHT + 100; // ~740px including avatars
+  const scaleX = (width * 0.95) / roomWidth;
+  const scaleY = ((height - 60) * 0.85) / roomHeight;
   const scale = Math.min(scaleX, scaleY, 1); // Don't scale up, only down
   
+  // Center the room on screen
+  const scaledRoomHeight = roomHeight * scale;
   const offsetX = width / 2;
-  const offsetY = isMobile ? 80 : 150;
+  const offsetY = (height - scaledRoomHeight) / 2 + 30; // Center vertically with slight top padding
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
@@ -238,8 +240,8 @@ function App() {
                 <Graphics
                   draw={(g) => {
                     g.clear();
-                    const text = bubble.content.slice(0, 40);
-                    const bubbleWidth = Math.min(text.length * 7 + 24, 280);
+                    const text = bubble.content.slice(0, 30);
+                    const bubbleWidth = Math.min(text.length * 7 + 24, 240);
                     const bubbleHeight = 32;
                     
                     g.beginFill(0xffffff, 0.95);
@@ -269,8 +271,8 @@ function App() {
                 />
                 <Text
                   text={
-                    bubble.content.length > 40
-                      ? bubble.content.slice(0, 40) + '...'
+                    bubble.content.length > 30
+                      ? bubble.content.slice(0, 30) + '...'
                       : bubble.content
                   }
                   x={0}
@@ -280,6 +282,7 @@ function App() {
                     fontSize: 11,
                     fill: 0x1a1a2e,
                     fontFamily: 'sans-serif',
+                    wordWrap: false,
                   })}
                 />
               </Container>
