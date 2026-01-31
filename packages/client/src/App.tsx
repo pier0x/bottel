@@ -248,49 +248,56 @@ function App() {
             // Fade out based on age
             const opacity = Math.max(0, 1 - (age / BUBBLE_LIFETIME) * 0.7);
             
+            // Remove emojis from username
+            const cleanName = bubble.agentName.replace(/[\u{1F600}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F900}-\u{1F9FF}\u{1F1E0}-\u{1F1FF}]/gu, '').trim();
+            // Combine into single line: "username: message"
+            const maxMsgLen = 28 - cleanName.length;
+            const msgText = bubble.content.length > maxMsgLen 
+              ? bubble.content.slice(0, maxMsgLen) + '...' 
+              : bubble.content;
+            const fullText = `${cleanName}: ${msgText}`;
+            const bubbleWidth = Math.min(fullText.length * 7 + 20, 280);
+            
             return (
               <Container key={bubble.id} x={bubble.x} y={y} alpha={opacity}>
                 <Graphics
                   draw={(g) => {
                     g.clear();
-                    const text = bubble.content.slice(0, 30);
-                    const bubbleWidth = Math.min(text.length * 7 + 24, 240);
-                    const bubbleHeight = 32;
+                    const bubbleHeight = 26;
                     
                     g.beginFill(0xffffff, 0.95);
                     g.lineStyle(2, 0x000000, 0.3);
-                    g.drawRoundedRect(-bubbleWidth / 2, -bubbleHeight / 2, bubbleWidth, bubbleHeight, 10);
+                    g.drawRoundedRect(-bubbleWidth / 2, -bubbleHeight / 2, bubbleWidth, bubbleHeight, 8);
                     g.endFill();
                     
+                    // Pointer triangle
                     g.beginFill(0xffffff, 0.95);
                     g.lineStyle(2, 0x000000, 0.3);
-                    g.moveTo(-6, bubbleHeight / 2 - 2);
-                    g.lineTo(0, bubbleHeight / 2 + 8);
-                    g.lineTo(6, bubbleHeight / 2 - 2);
+                    g.moveTo(-5, bubbleHeight / 2 - 2);
+                    g.lineTo(0, bubbleHeight / 2 + 6);
+                    g.lineTo(5, bubbleHeight / 2 - 2);
                     g.endFill();
                   }}
                 />
+                {/* Username in bold */}
                 <Text
-                  text={bubble.agentName}
-                  x={0}
-                  y={-6}
-                  anchor={{ x: 0.5, y: 0.5 }}
+                  text={`${cleanName}:`}
+                  x={-bubbleWidth / 2 + 10}
+                  y={0}
+                  anchor={{ x: 0, y: 0.5 }}
                   style={new TextStyle({
-                    fontSize: 10,
-                    fill: 0x666666,
+                    fontSize: 11,
+                    fill: 0x1a1a2e,
                     fontFamily: 'sans-serif',
                     fontWeight: 'bold',
                   })}
                 />
+                {/* Message in normal weight */}
                 <Text
-                  text={
-                    bubble.content.length > 30
-                      ? bubble.content.slice(0, 30) + '...'
-                      : bubble.content
-                  }
-                  x={0}
-                  y={6}
-                  anchor={{ x: 0.5, y: 0.5 }}
+                  text={msgText}
+                  x={-bubbleWidth / 2 + 12 + (cleanName.length + 1) * 6.5}
+                  y={0}
+                  anchor={{ x: 0, y: 0.5 }}
                   style={new TextStyle({
                     fontSize: 11,
                     fill: 0x1a1a2e,
