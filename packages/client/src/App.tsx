@@ -12,20 +12,21 @@ function toScreen(x: number, y: number): { x: number; y: number } {
   };
 }
 
-// Habbo-style floating chat bubble
+// Habbo-style stacking chat bubbles
 interface FloatingBubble {
   id: string;
   agentId: string;
   agentName: string;
   content: string;
-  startX: number;
-  startY: number;
+  x: number;           // Screen X position
+  slot: number;        // Stack slot (0 = bottom, increases going up)
   timestamp: number;
 }
 
-const BUBBLE_START_Y = 80;
-const BUBBLE_FLOAT_SPEED = 15;
-const BUBBLE_LIFETIME = 8000;
+const BUBBLE_HEIGHT = 45;      // Height of each bubble including spacing
+const BUBBLE_BASE_Y = 120;     // Y position for slot 0 (bottom of bubble area)
+const BUBBLE_LIFETIME = 8000;  // 8 seconds before disappearing
+const MAX_BUBBLES = 8;         // Max bubbles on screen
 
 function App() {
   const [connected, setConnected] = useState(false);
@@ -46,11 +47,19 @@ function App() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Update time for bubble animation
+  // Update time and manage bubble slots
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentTime(Date.now());
-      setFloatingBubbles(prev => prev.filter(b => Date.now() - b.timestamp < BUBBLE_LIFETIME));
+      // Remove expired bubbles and re-slot remaining ones
+      setFloatingBubbles(prev => {
+        const now = Date.now();
+        const active = prev.filter(b => now - b.timestamp < BUBBLE_LIFETIME);
+        // Re-assign slots based on age (newest = slot 0)
+        return active
+          .sort((a, b) => b.timestamp - a.timestamp) // Newest first
+          .map((bubble, index) => ({ ...bubble, slot: index }));
+      });
     }, 50);
     return () => clearInterval(interval);
   }, []);
@@ -129,18 +138,21 @@ function App() {
           const agent = currentAgents.find(a => a.id === msg.agentId);
           if (agent) {
             const screenPos = toScreen(agent.x, agent.y);
-            setFloatingBubbles(prev => [
-              ...prev,
-              {
+            setFloatingBubbles(prev => {
+              // Push all existing bubbles up by incrementing their slot
+              const pushed = prev.map(b => ({ ...b, slot: b.slot + 1 }));
+              // Add new bubble at slot 0, limit total bubbles
+              const newBubble: FloatingBubble = {
                 id: msg.id,
                 agentId: msg.agentId,
                 agentName: msg.agentName,
                 content: msg.content,
-                startX: screenPos.x,
-                startY: BUBBLE_START_Y,
+                x: screenPos.x,
+                slot: 0,
                 timestamp: Date.now(),
-              },
-            ]);
+              };
+              return [newBubble, ...pushed].slice(0, MAX_BUBBLES);
+            });
           }
           return currentAgents;
         });
@@ -231,12 +243,13 @@ function App() {
         <Container x={offsetX} y={0} scale={{ x: scale, y: 1 }}>
           {floatingBubbles.map((bubble) => {
             const age = currentTime - bubble.timestamp;
-            const floatOffset = (age / 1000) * BUBBLE_FLOAT_SPEED;
-            const opacity = Math.max(0, 1 - (age / BUBBLE_LIFETIME));
-            const y = bubble.startY - floatOffset;
+            // Y position based on slot (higher slot = higher on screen)
+            const y = BUBBLE_BASE_Y - (bubble.slot * BUBBLE_HEIGHT);
+            // Fade out based on age
+            const opacity = Math.max(0, 1 - (age / BUBBLE_LIFETIME) * 0.7);
             
             return (
-              <Container key={bubble.id} x={bubble.startX} y={y} alpha={opacity}>
+              <Container key={bubble.id} x={bubble.x} y={y} alpha={opacity}>
                 <Graphics
                   draw={(g) => {
                     g.clear();
