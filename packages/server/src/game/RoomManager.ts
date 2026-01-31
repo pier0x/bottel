@@ -20,6 +20,7 @@ interface ConnectedAgent {
 interface RoomInstance {
   room: Room;
   agents: Map<string, ConnectedAgent>; // agentId -> ConnectedAgent
+  spectators: Set<WebSocket>; // spectator connections
   messageHistory: ChatMessage[];
 }
 
@@ -120,6 +121,7 @@ class RoomManager {
     const instance: RoomInstance = {
       room,
       agents: new Map(),
+      spectators: new Set(),
       messageHistory,
     };
 
@@ -282,10 +284,35 @@ class RoomManager {
     if (!room) return;
 
     const data = JSON.stringify(message);
+    
+    // Send to agents
     for (const [agentId, agent] of room.agents) {
       if (agentId !== excludeAgentId && agent.ws.readyState === 1) {
         agent.ws.send(data);
       }
+    }
+    
+    // Send to spectators
+    for (const spectatorWs of room.spectators) {
+      if (spectatorWs.readyState === 1) {
+        spectatorWs.send(data);
+      }
+    }
+  }
+
+  addSpectator(roomId: string, ws: WebSocket): void {
+    const room = this.rooms.get(roomId);
+    if (room) {
+      room.spectators.add(ws);
+      console.log(`Spectator added to room ${room.room.name}. Total spectators: ${room.spectators.size}`);
+    }
+  }
+
+  removeSpectator(roomId: string, ws: WebSocket): void {
+    const room = this.rooms.get(roomId);
+    if (room) {
+      room.spectators.delete(ws);
+      console.log(`Spectator removed from room ${room.room.name}. Total spectators: ${room.spectators.size}`);
     }
   }
 }

@@ -24,7 +24,13 @@ interface AuthenticatedConnection {
   };
 }
 
+interface SpectatorConnection {
+  spectatorId: string;
+  roomId: string | null;
+}
+
 const connections = new Map<WebSocket, AuthenticatedConnection>();
+const spectators = new Map<WebSocket, SpectatorConnection>();
 
 function send(ws: WebSocket, message: ServerMessage): void {
   if (ws.readyState === 1) {
@@ -65,6 +71,14 @@ export async function handleConnection(ws: WebSocket, request: FastifyRequest): 
       connections.delete(ws);
       console.log(`Agent ${conn.name} disconnected`);
     }
+    
+    // Clean up spectator
+    const spec = spectators.get(ws);
+    if (spec && spec.roomId) {
+      roomManager.removeSpectator(spec.roomId, ws);
+      spectators.delete(ws);
+      console.log('Spectator disconnected');
+    }
   });
 
   ws.on('error', (error: Error) => {
@@ -85,11 +99,13 @@ async function handleMessage(ws: WebSocket, message: ClientMessage): Promise<voi
       break;
 
     case 'join':
-      if (!conn) {
-        send(ws, { type: 'error', code: 'NOT_AUTHENTICATED', message: 'Authenticate first' });
-        return;
+      if (conn) {
+        // Authenticated agent joining
+        await handleJoin(ws, conn, message.roomId);
+      } else {
+        // Spectator joining (no auth required)
+        await handleSpectatorJoin(ws, message.roomId);
       }
-      await handleJoin(ws, conn, message.roomId);
       break;
 
     case 'leave':
@@ -151,6 +167,34 @@ async function handleAuth(ws: WebSocket, token: string): Promise<void> {
   } catch (error) {
     send(ws, { type: 'auth_error', error: 'Invalid token' });
   }
+}
+
+async function handleSpectatorJoin(ws: WebSocket, roomId: string): Promise<void> {
+  // Load room by slug or ID
+  let room = await roomManager.loadRoomBySlug(roomId);
+  if (!room) {
+    room = await roomManager.loadRoom(roomId);
+  }
+
+  if (!room) {
+    send(ws, { type: 'error', code: 'ROOM_NOT_FOUND', message: 'Room not found' });
+    return;
+  }
+
+  // Register as spectator
+  const spectatorId = `spectator-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  spectators.set(ws, { spectatorId, roomId: room.room.id });
+  roomManager.addSpectator(room.room.id, ws);
+
+  // Send room state
+  send(ws, {
+    type: 'room_state',
+    room: room.room,
+    agents: roomManager.getRoomAgents(room.room.id),
+    messages: room.messageHistory,
+  });
+
+  console.log(`Spectator joined room ${room.room.name}`);
 }
 
 async function handleJoin(ws: WebSocket, conn: AuthenticatedConnection, roomId: string): Promise<void> {
