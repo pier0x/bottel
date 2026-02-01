@@ -526,7 +526,34 @@ function App() {
         </Container>
       </Stage>
 
-      {/* Chat log - desktop: always visible, mobile: slide-up panel */}
+      {/* Chat log toggle button (desktop) */}
+      {!isMobile && (
+        <button
+          onClick={() => setChatOpen(!chatOpen)}
+          style={{
+            position: 'absolute',
+            bottom: chatOpen ? 320 : 16,
+            right: 16,
+            zIndex: 20,
+            background: 'rgba(0,0,0,0.7)',
+            border: 'none',
+            padding: '8px 12px',
+            borderRadius: 8,
+            color: '#fff',
+            fontSize: 12,
+            cursor: 'pointer',
+            backdropFilter: 'blur(8px)',
+            transition: 'bottom 0.3s ease',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+          }}
+        >
+          💬 {chatOpen ? 'Hide' : 'Show'} Chat
+        </button>
+      )}
+
+      {/* Chat log - toggleable on both desktop and mobile */}
       <div
         style={{
           position: 'absolute',
@@ -534,45 +561,95 @@ function App() {
           right: isMobile ? 0 : 16,
           left: isMobile ? 0 : 'auto',
           width: isMobile ? '100%' : 320,
-          maxHeight: isMobile ? (chatOpen ? '60vh' : 0) : 300,
-          height: isMobile ? (chatOpen ? '60vh' : 0) : 'auto',
+          maxHeight: chatOpen ? (isMobile ? '60vh' : 300) : 0,
           background: 'rgba(0,0,0,0.85)',
           borderRadius: isMobile ? '16px 16px 0 0' : 12,
-          padding: isMobile ? (chatOpen ? 16 : 0) : 16,
-          paddingBottom: isMobile && chatOpen ? 80 : (isMobile ? 0 : 16),
+          padding: chatOpen ? 16 : 0,
+          paddingBottom: isMobile && chatOpen ? 80 : (chatOpen ? 16 : 0),
           overflowY: 'auto',
+          overflowX: 'hidden',
           zIndex: 15,
           backdropFilter: 'blur(8px)',
-          transition: 'max-height 0.3s ease, height 0.3s ease, padding 0.3s ease',
-          display: isMobile && !chatOpen ? 'none' : 'block',
+          transition: 'max-height 0.3s ease, padding 0.3s ease',
         }}
       >
-        <h3 style={{ 
-          marginBottom: 12, 
-          fontSize: 14, 
-          opacity: 0.7, 
-          textTransform: 'uppercase', 
-          letterSpacing: 1,
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-        }}>
-          Chat Log
-          {isMobile && (
-            <span style={{ fontSize: 12, opacity: 0.5 }}>{messages.length} messages</span>
-          )}
-        </h3>
-        {messages.slice(-30).map((m) => (
-          <div key={m.id} style={{ marginBottom: 8, fontSize: 13 }}>
-            <span style={{ color: '#10B981', fontWeight: 600 }}>{m.agentName}</span>
-            <span style={{ opacity: 0.5 }}>: </span>
-            <span style={{ opacity: 0.9 }}>{m.content}</span>
-          </div>
-        ))}
-        {messages.length === 0 && (
-          <div style={{ opacity: 0.5, fontSize: 13, fontStyle: 'italic' }}>
-            Waiting for AIs to chat...
-          </div>
+        {chatOpen && (
+          <>
+            <h3 style={{ 
+              marginBottom: 12, 
+              fontSize: 14, 
+              opacity: 0.7, 
+              textTransform: 'uppercase', 
+              letterSpacing: 1,
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+            }}>
+              Chat Log
+              <span style={{ fontSize: 12, opacity: 0.5 }}>{messages.length} messages</span>
+            </h3>
+            {messages.slice(-30).map((m) => {
+              // Find agent to get body color
+              const agent = agents.find(a => a.id === m.agentId);
+              const bodyColor = agent?.avatar?.bodyColor || '#666';
+              
+              return (
+                <div key={m.id} style={{ marginBottom: 10, fontSize: 13, display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                  {/* Mini avatar */}
+                  <div
+                    style={{
+                      width: 20,
+                      height: 20,
+                      borderRadius: 4,
+                      background: bodyColor,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                      marginTop: 1,
+                    }}
+                  >
+                    <div style={{
+                      width: 10,
+                      height: 10,
+                      borderRadius: '50%',
+                      background: '#fcd5b8',
+                      position: 'relative',
+                    }}>
+                      <div style={{
+                        position: 'absolute',
+                        top: 4,
+                        left: 2,
+                        width: 2,
+                        height: 2,
+                        borderRadius: '50%',
+                        background: '#333',
+                      }} />
+                      <div style={{
+                        position: 'absolute',
+                        top: 4,
+                        right: 2,
+                        width: 2,
+                        height: 2,
+                        borderRadius: '50%',
+                        background: '#333',
+                      }} />
+                    </div>
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <span style={{ color: '#10B981', fontWeight: 600 }}>{m.agentName}</span>
+                    <span style={{ opacity: 0.5 }}>: </span>
+                    <span style={{ opacity: 0.9 }}>{m.content}</span>
+                  </div>
+                </div>
+              );
+            })}
+            {messages.length === 0 && (
+              <div style={{ opacity: 0.5, fontSize: 13, fontStyle: 'italic' }}>
+                Waiting for AIs to chat...
+              </div>
+            )}
+          </>
         )}
       </div>
 
