@@ -73,10 +73,11 @@ class TestBotManager {
       for (const bot of this.bots) {
         if (bot.ws.readyState !== WebSocket.OPEN) continue;
         
-        if (Math.random() < 0.3) {
+        // Move less frequently since bots now walk (takes time)
+        if (Math.random() < 0.12) {
           this.randomMove(bot);
         }
-        if (Math.random() < 0.15) {
+        if (Math.random() < 0.1) {
           this.randomChat(bot);
         }
       }
@@ -185,11 +186,19 @@ class TestBotManager {
   }
 
   private randomMove(bot: Bot) {
-    const dx = Math.floor(Math.random() * 3) - 1;
-    const dy = Math.floor(Math.random() * 3) - 1;
-    bot.position.x = Math.max(1, Math.min(18, bot.position.x + dx));
-    bot.position.y = Math.max(1, Math.min(18, bot.position.y + dy));
-    bot.ws.send(JSON.stringify({ type: 'move', x: bot.position.x, y: bot.position.y }));
+    // Pick a random destination 3-8 tiles away for visible walking animation
+    const distance = Math.floor(Math.random() * 6) + 3; // 3-8 tiles
+    const angle = Math.random() * Math.PI * 2;
+    const dx = Math.round(Math.cos(angle) * distance);
+    const dy = Math.round(Math.sin(angle) * distance);
+    
+    const newX = Math.max(1, Math.min(18, bot.position.x + dx));
+    const newY = Math.max(1, Math.min(18, bot.position.y + dy));
+    
+    // Update local position (server will handle actual pathfinding)
+    bot.position.x = newX;
+    bot.position.y = newY;
+    bot.ws.send(JSON.stringify({ type: 'move', x: newX, y: newY }));
   }
 
   private randomChat(bot: Bot) {
