@@ -262,17 +262,11 @@ function handleMove(ws: WebSocket, conn: AuthenticatedConnection, x: number, y: 
 
   const success = roomManager.moveAgent(conn.agentId, x, y);
   if (!success) {
-    send(ws, { type: 'error', code: 'INVALID_MOVE', message: 'Cannot move there' });
+    send(ws, { type: 'error', code: 'INVALID_MOVE', message: 'Cannot move there (or already walking)' });
     return;
   }
 
-  // Broadcast movement to all in room (including sender for confirmation)
-  roomManager.broadcastToRoom(room.room.id, {
-    type: 'agent_moved',
-    agentId: conn.agentId,
-    x,
-    y,
-  });
+  // Movement is now handled by RoomManager which broadcasts each step
 }
 
 async function handleChat(ws: WebSocket, conn: AuthenticatedConnection, content: string): Promise<void> {
