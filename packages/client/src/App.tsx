@@ -1,22 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Stage, Container, Graphics, Text } from '@pixi/react';
-import { TextStyle, TextMetrics } from 'pixi.js';
+import { TextStyle } from 'pixi.js';
 import type { ServerMessage, RoomAgent, ChatMessage, Room } from '@bottel/shared';
 import { TILE_WIDTH, TILE_HEIGHT } from '@bottel/shared';
-
-// Shared text style for bubbles
-const bubbleTextStyle = new TextStyle({
-  fontSize: 11,
-  fill: 0x1a1a2e,
-  fontFamily: 'sans-serif',
-  fontWeight: 'normal',
-});
-
-// Measure text width using PixiJS TextMetrics
-function measureText(text: string): number {
-  const metrics = TextMetrics.measureText(text, bubbleTextStyle);
-  return metrics.width;
-}
 
 // Convert world coords to screen (isometric)
 function toScreen(x: number, y: number): { x: number; y: number } {
@@ -312,57 +298,65 @@ function App() {
         </button>
       )}
 
+      {/* Chat bubbles overlay (HTML for better text rendering) */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: bubbleBaseY + 50,
+          pointerEvents: 'none',
+          overflow: 'hidden',
+          zIndex: 5,
+        }}
+      >
+        {floatingBubbles.map((bubble) => {
+          const age = currentTime - bubble.timestamp;
+          const y = bubbleBaseY - (bubble.slot * BUBBLE_HEIGHT);
+          const opacity = Math.max(0, 1 - (age / BUBBLE_LIFETIME) * 0.7);
+          const cleanName = bubble.agentName.replace(/[\u{1F600}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F900}-\u{1F9FF}\u{1F1E0}-\u{1F1FF}]/gu, '').trim();
+          const maxMsgLen = 40 - cleanName.length;
+          const msgText = bubble.content.length > maxMsgLen 
+            ? bubble.content.slice(0, maxMsgLen) + '…' 
+            : bubble.content;
+          
+          // Convert bubble.x from room-relative to screen position
+          const screenX = offsetX + (bubble.x * scale);
+          
+          return (
+            <div
+              key={bubble.id}
+              style={{
+                position: 'absolute',
+                left: screenX,
+                top: y,
+                transform: 'translateX(-50%)',
+                opacity,
+                transition: 'top 0.3s ease-out, opacity 0.3s ease-out',
+                background: 'rgba(255, 255, 255, 0.95)',
+                padding: '6px 12px',
+                borderRadius: 12,
+                boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                fontSize: 13,
+                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                whiteSpace: 'nowrap',
+                color: '#1a1a2e',
+              }}
+            >
+              <span style={{ fontWeight: 600 }}>{cleanName}:</span>{' '}
+              <span>{msgText}</span>
+            </div>
+          );
+        })}
+      </div>
+
       {/* PixiJS Canvas */}
       <Stage
         width={width}
         height={height}
         options={{ background: 0x1a1a2e, antialias: true }}
       >
-        {/* Floating chat bubbles layer - scaled to match room */}
-        <Container x={offsetX} y={0} scale={{ x: scale, y: 1 }}>
-          {floatingBubbles.map((bubble) => {
-            const age = currentTime - bubble.timestamp;
-            // Y position based on slot (higher slot = higher on screen)
-            const y = bubbleBaseY - (bubble.slot * BUBBLE_HEIGHT);
-            // Fade out based on age
-            const opacity = Math.max(0, 1 - (age / BUBBLE_LIFETIME) * 0.7);
-            // Remove emojis from username
-            const cleanName = bubble.agentName.replace(/[\u{1F600}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F900}-\u{1F9FF}\u{1F1E0}-\u{1F1FF}]/gu, '').trim();
-            // Truncate message to fit
-            const maxMsgLen = 35 - cleanName.length;
-            const msgText = bubble.content.length > maxMsgLen 
-              ? bubble.content.slice(0, maxMsgLen) + '…' 
-              : bubble.content;
-            
-            // Combine text and measure actual width
-            const combinedText = `${cleanName}: ${msgText}`;
-            const textWidth = measureText(combinedText);
-            const bubbleWidth = textWidth + 16;
-            const bubbleHeight = 26;
-            
-            return (
-              <Container key={bubble.id} x={bubble.x} y={y} alpha={opacity}>
-                <Graphics
-                  draw={(g) => {
-                    g.clear();
-                    g.beginFill(0xffffff, 0.95);
-                    g.lineStyle(2, 0x000000, 0.3);
-                    g.drawRoundedRect(-bubbleWidth / 2, -bubbleHeight / 2, bubbleWidth, bubbleHeight, 8);
-                    g.endFill();
-                  }}
-                />
-                <Text
-                  text={combinedText}
-                  x={0}
-                  y={0}
-                  anchor={{ x: 0.5, y: 0.5 }}
-                  style={bubbleTextStyle}
-                />
-              </Container>
-            );
-          })}
-        </Container>
-
         {/* Room container - scaled to fit screen */}
         <Container x={offsetX} y={offsetY} scale={scale}>
           {/* Render floor tiles */}
