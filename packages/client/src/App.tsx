@@ -23,10 +23,11 @@ interface FloatingBubble {
   timestamp: number;
 }
 
-const BUBBLE_HEIGHT = 32;      // Height of each bubble including spacing (smaller = slower rise)
-const BUBBLE_BASE_Y = 220;     // Y position for slot 0 (higher = lower on screen)
-const BUBBLE_LIFETIME = 8000;  // 8 seconds before disappearing
-const MAX_BUBBLES = 8;         // Max bubbles on screen
+const BUBBLE_HEIGHT = 36;      // Height of each bubble including spacing
+const BUBBLE_BASE_Y = 220;     // Y position for slot 0 (mobile only)
+const BUBBLE_LIFETIME = 12000; // 12 seconds before disappearing
+const MAX_BUBBLES = 12;        // Max bubbles on screen
+const NAVBAR_HEIGHT = 60;      // Height of navbar area
 
 // Set to true to show mock bubbles for testing
 const MOCK_ENABLED = false;
@@ -37,7 +38,6 @@ function App() {
   const [agents, setAgents] = useState<RoomAgent[]>([]);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [floatingBubbles, setFloatingBubbles] = useState<FloatingBubble[]>([]);
-  const [currentTime, setCurrentTime] = useState(Date.now());
   const [chatOpen, setChatOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [botsRunning, setBotsRunning] = useState(false);
@@ -89,11 +89,9 @@ function App() {
     }
   }, []);
 
-  // Update time and manage bubble slots
+  // Manage bubble slots - remove expired and re-slot remaining
   useEffect(() => {
     const interval = setInterval(() => {
-      setCurrentTime(Date.now());
-      // Remove expired bubbles and re-slot remaining ones
       setFloatingBubbles(prev => {
         const now = Date.now();
         const active = prev.filter(b => now - b.timestamp < BUBBLE_LIFETIME);
@@ -102,7 +100,7 @@ function App() {
           .sort((a, b) => b.timestamp - a.timestamp) // Newest first
           .map((bubble, index) => ({ ...bubble, slot: index }));
       });
-    }, 50);
+    }, 100);
     return () => clearInterval(interval);
   }, []);
 
@@ -220,8 +218,8 @@ function App() {
     ? (height - scaledRoomHeight) * 0.65 + 20  // Mobile: 65% down
     : height - scaledRoomHeight - 40;           // Desktop: near bottom with 40px margin
   
-  // Bubble base Y - relative to room position on desktop
-  const bubbleBaseY = isMobile ? BUBBLE_BASE_Y : offsetY - 60;
+  // Bubble base Y - relative to room position (more gap on desktop)
+  const bubbleBaseY = isMobile ? BUBBLE_BASE_Y : offsetY - 100;
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
@@ -312,9 +310,16 @@ function App() {
         }}
       >
         {floatingBubbles.map((bubble) => {
-          const age = currentTime - bubble.timestamp;
           const y = bubbleBaseY - (bubble.slot * BUBBLE_HEIGHT);
-          const opacity = Math.max(0, 1 - (age / BUBBLE_LIFETIME) * 0.7);
+          
+          // Fade based on Y position: full opacity until y < 100, then fade to 0 at y = NAVBAR_HEIGHT
+          const fadeStartY = 100;
+          const fadeEndY = NAVBAR_HEIGHT;
+          let opacity = 1;
+          if (y < fadeStartY) {
+            opacity = Math.max(0, (y - fadeEndY) / (fadeStartY - fadeEndY));
+          }
+          
           const cleanName = bubble.agentName.replace(/[\u{1F600}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F900}-\u{1F9FF}\u{1F1E0}-\u{1F1FF}]/gu, '').trim();
           const maxMsgLen = 40 - cleanName.length;
           const msgText = bubble.content.length > maxMsgLen 
@@ -323,6 +328,9 @@ function App() {
           
           // Convert bubble.x from room-relative to screen position
           const screenX = offsetX + (bubble.x * scale);
+          
+          // Don't render if fully faded
+          if (opacity <= 0) return null;
           
           return (
             <div
