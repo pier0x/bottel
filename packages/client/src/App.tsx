@@ -421,34 +421,38 @@ function App() {
               const pos = toScreen(agent.x, agent.y);
 
               return (
-                <Container key={agent.id} x={pos.x} y={pos.y - 20}>
+                <Container key={agent.id} x={pos.x} y={pos.y - 30}>
                   <Graphics
                     draw={(g) => {
                       g.clear();
                       const color = parseInt(agent.avatar.bodyColor.slice(1), 16);
+                      // Shadow
                       g.beginFill(0x000000, 0.3);
-                      g.drawEllipse(0, 10, 14, 6);
+                      g.drawEllipse(0, 15, 21, 9);
                       g.endFill();
+                      // Body
                       g.beginFill(color);
-                      g.drawEllipse(0, -8, 14, 18);
+                      g.drawEllipse(0, -12, 21, 27);
                       g.endFill();
+                      // Head
                       g.beginFill(0xfcd5b8);
-                      g.drawCircle(0, -32, 12);
+                      g.drawCircle(0, -48, 18);
                       g.endFill();
+                      // Eyes
                       g.beginFill(0x333333);
-                      g.drawCircle(-4, -33, 2);
-                      g.drawCircle(4, -33, 2);
+                      g.drawCircle(-6, -50, 3);
+                      g.drawCircle(6, -50, 3);
                       g.endFill();
                     }}
                   />
                   
-                  <Container y={-52}>
+                  <Container y={-78}>
                     <Graphics
                       draw={(g) => {
                         g.clear();
-                        const nameWidth = agent.name.length * 7 + 12;
+                        const nameWidth = agent.name.length * 8 + 16;
                         g.beginFill(0x000000, 0.7);
-                        g.drawRoundedRect(-nameWidth / 2, -10, nameWidth, 18, 4);
+                        g.drawRoundedRect(-nameWidth / 2, -12, nameWidth, 22, 5);
                         g.endFill();
                       }}
                     />
@@ -456,7 +460,7 @@ function App() {
                       text={agent.name}
                       anchor={0.5}
                       style={new TextStyle({
-                        fontSize: 11,
+                        fontSize: 13,
                         fill: 0xffffff,
                         fontFamily: 'sans-serif',
                         fontWeight: 'bold',
