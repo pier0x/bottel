@@ -21,6 +21,7 @@ interface FloatingBubble {
   x: number;           // Screen X position
   slot: number;        // Stack slot (0 = bottom, increases going up)
   timestamp: number;
+  bodyColor: string;   // Avatar body color for mini profile pic
 }
 
 const BUBBLE_HEIGHT = 36;      // Height of each bubble including spacing
@@ -81,10 +82,10 @@ function App() {
     if (MOCK_ENABLED && floatingBubbles.length === 0) {
       const now = Date.now();
       setFloatingBubbles([
-        { id: '1', agentId: 'a1', agentName: 'Alice', content: 'Hello world!', x: -100, slot: 0, timestamp: now },
-        { id: '2', agentId: 'a2', agentName: 'Bob', content: 'This is a longer message to test', x: 50, slot: 1, timestamp: now - 500 },
-        { id: '3', agentId: 'a3', agentName: 'Charlie', content: 'Hi', x: 150, slot: 2, timestamp: now - 1000 },
-        { id: '4', agentId: 'a4', agentName: 'Diana', content: 'Testing the bubble width!', x: -50, slot: 3, timestamp: now - 1500 },
+        { id: '1', agentId: 'a1', agentName: 'Alice', content: 'Hello world!', x: -100, slot: 0, timestamp: now, bodyColor: '#E74C3C' },
+        { id: '2', agentId: 'a2', agentName: 'Bob', content: 'This is a longer message to test', x: 50, slot: 1, timestamp: now - 500, bodyColor: '#3498DB' },
+        { id: '3', agentId: 'a3', agentName: 'Charlie', content: 'Hi', x: 150, slot: 2, timestamp: now - 1000, bodyColor: '#2ECC71' },
+        { id: '4', agentId: 'a4', agentName: 'Diana', content: 'Testing the bubble width!', x: -50, slot: 3, timestamp: now - 1500, bodyColor: '#9B59B6' },
       ]);
     }
   }, []);
@@ -190,6 +191,7 @@ function App() {
                 x: screenPos.x,
                 slot: 0,
                 timestamp: Date.now(),
+                bodyColor: agent.avatar.bodyColor,
               };
               return [newBubble, ...pushed].slice(0, MAX_BUBBLES);
             });
@@ -343,17 +345,66 @@ function App() {
                 opacity,
                 transition: 'top 0.3s ease-out, opacity 0.3s ease-out',
                 background: 'rgba(255, 255, 255, 0.95)',
-                padding: '6px 12px',
-                borderRadius: 12,
+                padding: '5px 12px 5px 6px',
+                borderRadius: 16,
                 boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
                 fontSize: 13,
                 fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
                 whiteSpace: 'nowrap',
                 color: '#1a1a2e',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
               }}
             >
-              <span style={{ fontWeight: 600 }}>{cleanName}:</span>{' '}
-              <span>{msgText}</span>
+              {/* Mini avatar pic */}
+              <div
+                style={{
+                  width: 24,
+                  height: 24,
+                  borderRadius: 6,
+                  background: bubble.bodyColor,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  boxShadow: 'inset 0 -2px 4px rgba(0,0,0,0.15)',
+                }}
+              >
+                {/* Simple face: skin circle with eyes */}
+                <div style={{
+                  width: 14,
+                  height: 14,
+                  borderRadius: '50%',
+                  background: '#fcd5b8',
+                  position: 'relative',
+                  marginTop: -2,
+                }}>
+                  {/* Eyes */}
+                  <div style={{
+                    position: 'absolute',
+                    top: 5,
+                    left: 3,
+                    width: 3,
+                    height: 3,
+                    borderRadius: '50%',
+                    background: '#333',
+                  }} />
+                  <div style={{
+                    position: 'absolute',
+                    top: 5,
+                    right: 3,
+                    width: 3,
+                    height: 3,
+                    borderRadius: '50%',
+                    background: '#333',
+                  }} />
+                </div>
+              </div>
+              <div>
+                <span style={{ fontWeight: 600 }}>{cleanName}:</span>{' '}
+                <span>{msgText}</span>
+              </div>
             </div>
           );
         })}
