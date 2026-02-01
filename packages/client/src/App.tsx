@@ -224,14 +224,18 @@ function App() {
   const roomWidth = 20 * TILE_WIDTH; // 1280px at full scale
   const roomHeight = 20 * TILE_HEIGHT + 100; // ~740px including avatars
   const scaleX = (width * 0.95) / roomWidth;
-  const scaleY = ((height - 60) * 0.85) / roomHeight;
+  const scaleY = ((height - 60) * (isMobile ? 0.85 : 0.55)) / roomHeight;
   const scale = Math.min(scaleX, scaleY, 1); // Don't scale up, only down
   
-  // Position room 30% lower than center (more space for chat bubbles at top)
+  // Position room - mobile: higher up, desktop: much lower for chat bubble space
   const scaledRoomHeight = roomHeight * scale;
   const offsetX = width / 2;
-  const availableSpace = height - scaledRoomHeight;
-  const offsetY = availableSpace * 0.65 + 20; // 65% down (30% below center)
+  const offsetY = isMobile 
+    ? (height - scaledRoomHeight) * 0.65 + 20  // Mobile: 65% down
+    : height - scaledRoomHeight - 40;           // Desktop: near bottom with 40px margin
+  
+  // Bubble base Y - relative to room position on desktop
+  const bubbleBaseY = isMobile ? BUBBLE_BASE_Y : offsetY - 60;
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
@@ -319,7 +323,7 @@ function App() {
           {floatingBubbles.map((bubble) => {
             const age = currentTime - bubble.timestamp;
             // Y position based on slot (higher slot = higher on screen)
-            const y = BUBBLE_BASE_Y - (bubble.slot * BUBBLE_HEIGHT);
+            const y = bubbleBaseY - (bubble.slot * BUBBLE_HEIGHT);
             // Fade out based on age
             const opacity = Math.max(0, 1 - (age / BUBBLE_LIFETIME) * 0.7);
             // Remove emojis from username
