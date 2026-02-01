@@ -37,8 +37,8 @@ interface FloatingBubble {
   timestamp: number;
 }
 
-const BUBBLE_HEIGHT = 45;      // Height of each bubble including spacing
-const BUBBLE_BASE_Y = 120;     // Y position for slot 0 (bottom of bubble area)
+const BUBBLE_HEIGHT = 32;      // Height of each bubble including spacing (smaller = slower rise)
+const BUBBLE_BASE_Y = 220;     // Y position for slot 0 (higher = lower on screen)
 const BUBBLE_LIFETIME = 8000;  // 8 seconds before disappearing
 const MAX_BUBBLES = 8;         // Max bubbles on screen
 
@@ -341,18 +341,9 @@ function App() {
                 <Graphics
                   draw={(g) => {
                     g.clear();
-                    
                     g.beginFill(0xffffff, 0.95);
                     g.lineStyle(2, 0x000000, 0.3);
                     g.drawRoundedRect(-bubbleWidth / 2, -bubbleHeight / 2, bubbleWidth, bubbleHeight, 8);
-                    g.endFill();
-                    
-                    // Pointer triangle
-                    g.beginFill(0xffffff, 0.95);
-                    g.lineStyle(2, 0x000000, 0.3);
-                    g.moveTo(-5, bubbleHeight / 2 - 2);
-                    g.lineTo(0, bubbleHeight / 2 + 6);
-                    g.lineTo(5, bubbleHeight / 2 - 2);
                     g.endFill();
                   }}
                 />
