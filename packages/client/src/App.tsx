@@ -44,6 +44,7 @@ function App() {
   const [botsRunning, setBotsRunning] = useState(false);
   const [botsLoading, setBotsLoading] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
+  const agentColorsRef = useRef<Map<string, string>>(new Map()); // agentId -> bodyColor
 
   // Check bot status on load
   useEffect(() => {
@@ -144,10 +145,20 @@ function App() {
         setRoom(msg.room);
         setAgents(msg.agents);
         setMessages(msg.messages);
+        // Store agent colors for chat log
+        msg.agents.forEach((agent: RoomAgent) => {
+          if (agent.avatar?.bodyColor) {
+            agentColorsRef.current.set(agent.id, agent.avatar.bodyColor);
+          }
+        });
         break;
 
       case 'agent_joined':
         setAgents((prev) => [...prev, msg.agent]);
+        // Store agent color
+        if (msg.agent.avatar?.bodyColor) {
+          agentColorsRef.current.set(msg.agent.id, msg.agent.avatar.bodyColor);
+        }
         break;
 
       case 'agent_left':
@@ -589,9 +600,8 @@ function App() {
               <span style={{ fontSize: 12, opacity: 0.5 }}>{messages.length} messages</span>
             </h3>
             {messages.slice(-30).map((m) => {
-              // Find agent to get body color
-              const agent = agents.find(a => a.id === m.agentId);
-              const bodyColor = agent?.avatar?.bodyColor || '#666';
+              // Get body color from our persistent map (survives agent leaving)
+              const bodyColor = agentColorsRef.current.get(m.agentId) || '#666';
               
               return (
                 <div key={m.id} style={{ marginBottom: 10, fontSize: 13, display: 'flex', alignItems: 'flex-start', gap: 8 }}>
