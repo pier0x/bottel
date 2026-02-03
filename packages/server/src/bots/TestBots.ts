@@ -136,7 +136,12 @@ class TestBotManager {
 
     for (const bot of this.bots) {
       try {
+        // Send leave message before disconnecting so other clients see them leave
+        if (bot.ws.readyState === WebSocket.OPEN) {
+          bot.ws.send(JSON.stringify({ type: 'leave' }));
+        }
         bot.ws.close();
+        console.log(`[${bot.name}] 👋 Left and disconnected`);
       } catch (e) {
         // ignore
       }
