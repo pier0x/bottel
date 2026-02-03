@@ -1050,55 +1050,111 @@ function App() {
         </>
       )}
 
-      {/* Room Navigator toggle button - desktop only */}
+      {/* Desktop Dock (Mac-style bottom bar) */}
       {!isMobile && (
-        <button
-          onClick={() => setNavigatorOpen(!navigatorOpen)}
+        <div
           style={{
             position: 'absolute',
-            top: 70,
-            left: navigatorOpen ? 308 : 16,
-            zIndex: 25,
-            background: navigatorOpen ? 'rgba(0,0,0,0.7)' : '#3B82F6',
-            border: 'none',
-            padding: '8px 12px',
-            borderRadius: 8,
-            color: '#fff',
-            fontSize: 12,
-            cursor: 'pointer',
-            backdropFilter: 'blur(8px)',
-            transition: 'left 0.3s ease',
+            bottom: 16,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            background: 'rgba(0,0,0,0.7)',
+            backdropFilter: 'blur(12px)',
+            borderRadius: 16,
+            padding: '8px 16px',
             display: 'flex',
             alignItems: 'center',
-            gap: 6,
-            boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+            gap: 8,
+            zIndex: 20,
+            boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
           }}
         >
-          🚪 {navigatorOpen ? '✕' : 'Rooms'}
-        </button>
+          <button
+            onClick={() => setNavigatorOpen(!navigatorOpen)}
+            style={{
+              background: navigatorOpen ? 'rgba(59,130,246,0.3)' : 'transparent',
+              border: 'none',
+              borderRadius: 12,
+              padding: '8px 16px',
+              color: '#fff',
+              cursor: 'pointer',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 4,
+              transition: 'all 0.2s',
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+            onMouseLeave={(e) => e.currentTarget.style.background = navigatorOpen ? 'rgba(59,130,246,0.3)' : 'transparent'}
+          >
+            <span style={{ fontSize: 24 }}>🚪</span>
+            <span style={{ fontSize: 11, opacity: 0.8 }}>Rooms</span>
+          </button>
+        </div>
       )}
 
-      {/* Room Navigator - left sidebar */}
+      {/* Room Navigator - Modal for desktop, Sidebar for mobile */}
+      {/* Desktop Modal Backdrop */}
+      {!isMobile && navigatorOpen && (
+        <div
+          onClick={() => setNavigatorOpen(false)}
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0,0,0,0.5)',
+            zIndex: 24,
+          }}
+        />
+      )}
       <div
         style={{
           position: 'absolute',
-          top: isMobile ? 56 : 0,
-          left: navigatorOpen ? 0 : (isMobile ? -280 : -308),
-          bottom: isMobile ? 60 : 0,
-          width: isMobile ? 280 : 300,
+          // Mobile: sidebar from left
+          // Desktop: centered modal
+          top: isMobile ? 56 : '50%',
+          left: isMobile ? (navigatorOpen ? 0 : -280) : '50%',
+          bottom: isMobile ? 60 : 'auto',
+          transform: isMobile ? 'none' : 'translate(-50%, -50%)',
+          width: isMobile ? 280 : 400,
+          maxHeight: isMobile ? 'auto' : '70vh',
           background: 'rgba(0,0,0,0.95)',
-          borderRadius: isMobile ? '0 12px 12px 0' : '0 12px 12px 0',
+          borderRadius: isMobile ? '0 12px 12px 0' : 16,
           padding: '16px',
-          paddingTop: isMobile ? 16 : 70,
+          paddingTop: 16,
           overflow: 'hidden',
-          zIndex: 15,
-          backdropFilter: 'blur(8px)',
-          transition: 'left 0.3s ease',
-          display: 'flex',
+          zIndex: isMobile ? 15 : 25,
+          backdropFilter: 'blur(12px)',
+          transition: isMobile ? 'left 0.3s ease' : 'none',
+          display: isMobile || navigatorOpen ? 'flex' : 'none',
           flexDirection: 'column',
           gap: 12,
+          boxShadow: isMobile ? 'none' : '0 8px 32px rgba(0,0,0,0.5)',
         }}
       >
+        {/* Header with title and close button (desktop only) */}
+        {!isMobile && (
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+            <h3 style={{ fontSize: 16, fontWeight: 600, margin: 0 }}>🚪 Room Navigator</h3>
+            <button
+              onClick={() => setNavigatorOpen(false)}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: '#fff',
+                fontSize: 18,
+                cursor: 'pointer',
+                opacity: 0.6,
+                padding: 4,
+              }}
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
         {/* Tabs */}
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', flexShrink: 0 }}>
           <button
