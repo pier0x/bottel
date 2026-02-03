@@ -865,8 +865,8 @@ function App() {
         onClick={() => setNavigatorOpen(!navigatorOpen)}
         style={{
           position: 'absolute',
-          bottom: navigatorOpen ? 140 : 16,
-          left: 16,
+          top: 70,
+          left: navigatorOpen ? (isMobile ? 260 : 300) : 16,
           zIndex: 20,
           background: 'rgba(0,0,0,0.7)',
           border: 'none',
@@ -876,223 +876,232 @@ function App() {
           fontSize: 12,
           cursor: 'pointer',
           backdropFilter: 'blur(8px)',
-          transition: 'bottom 0.3s ease',
+          transition: 'left 0.3s ease',
           display: 'flex',
           alignItems: 'center',
           gap: 6,
         }}
       >
-        🚪 {navigatorOpen ? 'Hide' : 'Rooms'}
+        🚪 {navigatorOpen ? '✕' : 'Rooms'}
       </button>
 
-      {/* Room Navigator - tabbed panel at bottom */}
+      {/* Room Navigator - left sidebar */}
       <div
         style={{
           position: 'absolute',
+          top: 0,
+          left: navigatorOpen ? 0 : (isMobile ? -260 : -300),
           bottom: 0,
-          left: 0,
-          right: isMobile ? 0 : 340,
-          height: navigatorOpen ? 124 : 0,
-          background: 'rgba(0,0,0,0.85)',
-          borderRadius: '12px 12px 0 0',
-          padding: navigatorOpen ? '10px 16px' : 0,
+          width: isMobile ? 260 : 300,
+          background: 'rgba(0,0,0,0.9)',
+          borderRadius: '0 12px 12px 0',
+          padding: '16px',
+          paddingTop: 70,
           overflow: 'hidden',
           zIndex: 15,
           backdropFilter: 'blur(8px)',
-          transition: 'height 0.3s ease, padding 0.3s ease',
+          transition: 'left 0.3s ease',
           display: 'flex',
           flexDirection: 'column',
-          gap: 8,
+          gap: 12,
         }}
       >
-        {navigatorOpen && (
-          <>
-            {/* Tabs */}
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
-              <button
-                onClick={() => setNavigatorTab('popular')}
-                style={{
-                  background: navigatorTab === 'popular' ? '#3B82F6' : 'rgba(255,255,255,0.1)',
-                  border: 'none',
-                  borderRadius: 6,
-                  padding: '6px 12px',
-                  color: '#fff',
-                  fontSize: 12,
-                  cursor: 'pointer',
-                  fontWeight: navigatorTab === 'popular' ? 600 : 400,
-                }}
-              >
-                🔥 Popular
-              </button>
-              <button
-                onClick={() => setNavigatorTab('spectated')}
-                style={{
-                  background: navigatorTab === 'spectated' ? '#3B82F6' : 'rgba(255,255,255,0.1)',
-                  border: 'none',
-                  borderRadius: 6,
-                  padding: '6px 12px',
-                  color: '#fff',
-                  fontSize: 12,
-                  cursor: 'pointer',
-                  fontWeight: navigatorTab === 'spectated' ? 600 : 400,
-                }}
-              >
-                👀 Most Watched
-              </button>
-              <button
-                onClick={() => setNavigatorTab('search')}
-                style={{
-                  background: navigatorTab === 'search' ? '#3B82F6' : 'rgba(255,255,255,0.1)',
-                  border: 'none',
-                  borderRadius: 6,
-                  padding: '6px 12px',
-                  color: '#fff',
-                  fontSize: 12,
-                  cursor: 'pointer',
-                  fontWeight: navigatorTab === 'search' ? 600 : 400,
-                }}
-              >
-                🔍 Search
-              </button>
-              {navigatorTab === 'search' && (
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search by room or owner..."
-                  style={{
-                    background: 'rgba(255,255,255,0.1)',
-                    border: '1px solid rgba(255,255,255,0.2)',
-                    borderRadius: 6,
-                    padding: '6px 12px',
-                    color: '#fff',
-                    fontSize: 12,
-                    outline: 'none',
-                    flex: 1,
-                    maxWidth: 200,
-                  }}
-                />
-              )}
+        {/* Tabs */}
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', flexShrink: 0 }}>
+          <button
+            onClick={() => setNavigatorTab('popular')}
+            style={{
+              background: navigatorTab === 'popular' ? '#3B82F6' : 'rgba(255,255,255,0.1)',
+              border: 'none',
+              borderRadius: 6,
+              padding: '8px 12px',
+              color: '#fff',
+              fontSize: 12,
+              cursor: 'pointer',
+              fontWeight: navigatorTab === 'popular' ? 600 : 400,
+            }}
+          >
+            🔥 Popular
+          </button>
+          <button
+            onClick={() => setNavigatorTab('spectated')}
+            style={{
+              background: navigatorTab === 'spectated' ? '#3B82F6' : 'rgba(255,255,255,0.1)',
+              border: 'none',
+              borderRadius: 6,
+              padding: '8px 12px',
+              color: '#fff',
+              fontSize: 12,
+              cursor: 'pointer',
+              fontWeight: navigatorTab === 'spectated' ? 600 : 400,
+            }}
+          >
+            👀 Watched
+          </button>
+          <button
+            onClick={() => setNavigatorTab('search')}
+            style={{
+              background: navigatorTab === 'search' ? '#3B82F6' : 'rgba(255,255,255,0.1)',
+              border: 'none',
+              borderRadius: 6,
+              padding: '8px 12px',
+              color: '#fff',
+              fontSize: 12,
+              cursor: 'pointer',
+              fontWeight: navigatorTab === 'search' ? 600 : 400,
+            }}
+          >
+            🔍 Search
+          </button>
+        </div>
+
+        {/* Search input */}
+        {navigatorTab === 'search' && (
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search by room or owner..."
+            style={{
+              background: 'rgba(255,255,255,0.1)',
+              border: '1px solid rgba(255,255,255,0.2)',
+              borderRadius: 8,
+              padding: '10px 14px',
+              color: '#fff',
+              fontSize: 13,
+              outline: 'none',
+              width: '100%',
+              boxSizing: 'border-box',
+            }}
+          />
+        )}
+
+        {/* Room list */}
+        <div style={{ 
+          display: 'flex', 
+          flexDirection: 'column', 
+          gap: 8, 
+          overflowY: 'auto', 
+          flex: 1,
+          paddingRight: 4,
+        }}>
+          {navigatorTab === 'popular' && activeRooms.length === 0 && (
+            <div style={{ opacity: 0.5, fontSize: 13, fontStyle: 'italic', padding: 8 }}>
+              No active rooms. Start some bots!
             </div>
-
-            {/* Room list */}
-            <div style={{ display: 'flex', gap: 12, overflowX: 'auto', flex: 1, alignItems: 'center' }}>
-              {navigatorTab === 'popular' && activeRooms.length === 0 && (
-                <div style={{ opacity: 0.5, fontSize: 13, fontStyle: 'italic' }}>
-                  No active rooms. Start some bots!
-                </div>
-              )}
-              {navigatorTab === 'popular' && activeRooms.map((r) => (
-                <button
-                  key={r.id}
-                  onClick={() => switchRoom(r.slug)}
-                  style={{
-                    background: currentRoomId === r.id ? '#3B82F6' : 'rgba(255,255,255,0.1)',
-                    border: currentRoomId === r.id ? '2px solid #60A5FA' : '2px solid transparent',
-                    borderRadius: 8,
-                    padding: '8px 16px',
-                    color: '#fff',
-                    fontSize: 13,
-                    cursor: 'pointer',
-                    whiteSpace: 'nowrap',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 8,
-                    transition: 'all 0.2s',
-                    flexShrink: 0,
-                  }}
-                >
-                  <span style={{ fontWeight: 600 }}>{r.name}</span>
-                  <span style={{ background: 'rgba(0,0,0,0.3)', padding: '2px 6px', borderRadius: 4, fontSize: 11 }}>
-                    🤖 {r.agentCount}
-                  </span>
-                  {r.spectatorCount > 0 && (
-                    <span style={{ background: 'rgba(0,0,0,0.3)', padding: '2px 6px', borderRadius: 4, fontSize: 11 }}>
-                      👀 {r.spectatorCount}
-                    </span>
-                  )}
-                </button>
-              ))}
-
-              {navigatorTab === 'spectated' && spectatedRooms.length === 0 && (
-                <div style={{ opacity: 0.5, fontSize: 13, fontStyle: 'italic' }}>
-                  No rooms being watched right now
-                </div>
-              )}
-              {navigatorTab === 'spectated' && spectatedRooms.map((r) => (
-                <button
-                  key={r.id}
-                  onClick={() => switchRoom(r.slug)}
-                  style={{
-                    background: currentRoomId === r.id ? '#3B82F6' : 'rgba(255,255,255,0.1)',
-                    border: currentRoomId === r.id ? '2px solid #60A5FA' : '2px solid transparent',
-                    borderRadius: 8,
-                    padding: '8px 16px',
-                    color: '#fff',
-                    fontSize: 13,
-                    cursor: 'pointer',
-                    whiteSpace: 'nowrap',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 8,
-                    transition: 'all 0.2s',
-                    flexShrink: 0,
-                  }}
-                >
-                  <span style={{ fontWeight: 600 }}>{r.name}</span>
-                  <span style={{ background: 'rgba(0,0,0,0.3)', padding: '2px 6px', borderRadius: 4, fontSize: 11 }}>
+          )}
+          {navigatorTab === 'popular' && activeRooms.map((r) => (
+            <button
+              key={r.id}
+              onClick={() => switchRoom(r.slug)}
+              style={{
+                background: currentRoomId === r.id ? '#3B82F6' : 'rgba(255,255,255,0.1)',
+                border: currentRoomId === r.id ? '2px solid #60A5FA' : '2px solid transparent',
+                borderRadius: 8,
+                padding: '12px 14px',
+                color: '#fff',
+                fontSize: 13,
+                cursor: 'pointer',
+                textAlign: 'left',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 6,
+                transition: 'all 0.2s',
+              }}
+            >
+              <span style={{ fontWeight: 600 }}>{r.name}</span>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <span style={{ background: 'rgba(0,0,0,0.3)', padding: '2px 8px', borderRadius: 4, fontSize: 11 }}>
+                  🤖 {r.agentCount}
+                </span>
+                {r.spectatorCount > 0 && (
+                  <span style={{ background: 'rgba(0,0,0,0.3)', padding: '2px 8px', borderRadius: 4, fontSize: 11 }}>
                     👀 {r.spectatorCount}
                   </span>
-                  <span style={{ background: 'rgba(0,0,0,0.3)', padding: '2px 6px', borderRadius: 4, fontSize: 11 }}>
+                )}
+              </div>
+            </button>
+          ))}
+
+          {navigatorTab === 'spectated' && spectatedRooms.length === 0 && (
+            <div style={{ opacity: 0.5, fontSize: 13, fontStyle: 'italic', padding: 8 }}>
+              No rooms being watched right now
+            </div>
+          )}
+          {navigatorTab === 'spectated' && spectatedRooms.map((r) => (
+            <button
+              key={r.id}
+              onClick={() => switchRoom(r.slug)}
+              style={{
+                background: currentRoomId === r.id ? '#3B82F6' : 'rgba(255,255,255,0.1)',
+                border: currentRoomId === r.id ? '2px solid #60A5FA' : '2px solid transparent',
+                borderRadius: 8,
+                padding: '12px 14px',
+                color: '#fff',
+                fontSize: 13,
+                cursor: 'pointer',
+                textAlign: 'left',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 6,
+                transition: 'all 0.2s',
+              }}
+            >
+              <span style={{ fontWeight: 600 }}>{r.name}</span>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <span style={{ background: 'rgba(0,0,0,0.3)', padding: '2px 8px', borderRadius: 4, fontSize: 11 }}>
+                  👀 {r.spectatorCount}
+                </span>
+                <span style={{ background: 'rgba(0,0,0,0.3)', padding: '2px 8px', borderRadius: 4, fontSize: 11 }}>
+                  🤖 {r.agentCount}
+                </span>
+              </div>
+            </button>
+          ))}
+
+          {navigatorTab === 'search' && searchQuery.length < 2 && (
+            <div style={{ opacity: 0.5, fontSize: 13, fontStyle: 'italic', padding: 8 }}>
+              Type at least 2 characters to search...
+            </div>
+          )}
+          {navigatorTab === 'search' && searchQuery.length >= 2 && searchResults.length === 0 && (
+            <div style={{ opacity: 0.5, fontSize: 13, fontStyle: 'italic', padding: 8 }}>
+              No rooms found
+            </div>
+          )}
+          {navigatorTab === 'search' && searchResults.map((r) => (
+            <button
+              key={r.id}
+              onClick={() => switchRoom(r.slug)}
+              style={{
+                background: currentRoomId === r.id ? '#3B82F6' : 'rgba(255,255,255,0.1)',
+                border: currentRoomId === r.id ? '2px solid #60A5FA' : '2px solid transparent',
+                borderRadius: 8,
+                padding: '12px 14px',
+                color: '#fff',
+                fontSize: 13,
+                cursor: 'pointer',
+                textAlign: 'left',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 6,
+                transition: 'all 0.2s',
+              }}
+            >
+              <span style={{ fontWeight: 600 }}>{r.name}</span>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                {r.ownerName && (
+                  <span style={{ opacity: 0.6, fontSize: 11 }}>by {r.ownerName}</span>
+                )}
+                {r.agentCount > 0 && (
+                  <span style={{ background: 'rgba(0,0,0,0.3)', padding: '2px 8px', borderRadius: 4, fontSize: 11 }}>
                     🤖 {r.agentCount}
                   </span>
-                </button>
-              ))}
-
-              {navigatorTab === 'search' && searchQuery.length < 2 && (
-                <div style={{ opacity: 0.5, fontSize: 13, fontStyle: 'italic' }}>
-                  Type at least 2 characters to search...
-                </div>
-              )}
-              {navigatorTab === 'search' && searchQuery.length >= 2 && searchResults.length === 0 && (
-                <div style={{ opacity: 0.5, fontSize: 13, fontStyle: 'italic' }}>
-                  No rooms found
-                </div>
-              )}
-              {navigatorTab === 'search' && searchResults.map((r) => (
-                <button
-                  key={r.id}
-                  onClick={() => switchRoom(r.slug)}
-                  style={{
-                    background: currentRoomId === r.id ? '#3B82F6' : 'rgba(255,255,255,0.1)',
-                    border: currentRoomId === r.id ? '2px solid #60A5FA' : '2px solid transparent',
-                    borderRadius: 8,
-                    padding: '8px 16px',
-                    color: '#fff',
-                    fontSize: 13,
-                    cursor: 'pointer',
-                    whiteSpace: 'nowrap',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 8,
-                    transition: 'all 0.2s',
-                    flexShrink: 0,
-                  }}
-                >
-                  <span style={{ fontWeight: 600 }}>{r.name}</span>
-                  {r.ownerName && (
-                    <span style={{ opacity: 0.6, fontSize: 11 }}>by {r.ownerName}</span>
-                  )}
-                  {r.agentCount > 0 && (
-                    <span style={{ background: 'rgba(0,0,0,0.3)', padding: '2px 6px', borderRadius: 4, fontSize: 11 }}>
-                      🤖 {r.agentCount}
-                    </span>
-                  )}
-                </button>
-              ))}
-            </div>
-          </>
-        )}
+                )}
+              </div>
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );
