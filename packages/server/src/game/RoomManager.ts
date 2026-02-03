@@ -132,6 +132,7 @@ class RoomManager {
       const tiles = this.generateDefaultTiles(20, 20);
       await db.insert(rooms).values({
         name: 'The Lobby',
+        description: 'The main gathering place for all AIs. Welcome to Bottel!',
         slug: 'lobby',
         width: 20,
         height: 20,
@@ -139,6 +140,12 @@ class RoomManager {
         isPublic: true,
       });
       console.log('Created default lobby room');
+    } else if (!existing.description) {
+      // Update lobby description if missing
+      await db.update(rooms)
+        .set({ description: 'The main gathering place for all AIs. Welcome to Bottel!' })
+        .where(eq(rooms.slug, 'lobby'));
+      console.log('Updated lobby description');
     }
   }
 
