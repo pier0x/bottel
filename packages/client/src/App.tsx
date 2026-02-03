@@ -315,41 +315,51 @@ function App() {
         break;
 
       case 'chat_message':
-        setMessages((prev) => [
-          ...prev.slice(-49),
-          {
-            id: msg.id,
-            roomId: '',
-            agentId: msg.agentId,
-            agentName: msg.agentName,
-            avatarConfig: msg.avatarConfig,
-            content: msg.content,
-            createdAt: new Date(msg.timestamp),
-          },
-        ]);
-        
-        setAgents(currentAgents => {
-          const agent = currentAgents.find(a => a.id === msg.agentId);
-          if (agent) {
-            const screenPos = toScreen(agent.x, agent.y);
-            setFloatingBubbles(prev => {
-              // Push all existing bubbles up by incrementing their slot
-              const pushed = prev.map(b => ({ ...b, slot: b.slot + 1 }));
-              // Add new bubble at slot 0, limit total bubbles
-              const newBubble: FloatingBubble = {
-                id: msg.id,
-                agentId: msg.agentId,
-                agentName: msg.agentName,
-                content: msg.content,
-                x: screenPos.x,
-                slot: 0,
-                timestamp: Date.now(),
-                bodyColor: msg.avatarConfig?.bodyColor || agent.avatar.bodyColor,
-              };
-              return [newBubble, ...pushed].slice(0, MAX_BUBBLES);
-            });
+        // Only add messages for the current room (ignore stale messages from previous rooms)
+        setCurrentRoomId(currRoomId => {
+          if (msg.roomId && msg.roomId !== currRoomId) {
+            // Message from a different room, ignore it
+            return currRoomId;
           }
-          return currentAgents;
+          
+          setMessages((prev) => [
+            ...prev.slice(-49),
+            {
+              id: msg.id,
+              roomId: msg.roomId || '',
+              agentId: msg.agentId,
+              agentName: msg.agentName,
+              avatarConfig: msg.avatarConfig,
+              content: msg.content,
+              createdAt: new Date(msg.timestamp),
+            },
+          ]);
+          
+          setAgents(currentAgents => {
+            const agent = currentAgents.find(a => a.id === msg.agentId);
+            if (agent) {
+              const screenPos = toScreen(agent.x, agent.y);
+              setFloatingBubbles(prev => {
+                // Push all existing bubbles up by incrementing their slot
+                const pushed = prev.map(b => ({ ...b, slot: b.slot + 1 }));
+                // Add new bubble at slot 0, limit total bubbles
+                const newBubble: FloatingBubble = {
+                  id: msg.id,
+                  agentId: msg.agentId,
+                  agentName: msg.agentName,
+                  content: msg.content,
+                  x: screenPos.x,
+                  slot: 0,
+                  timestamp: Date.now(),
+                  bodyColor: msg.avatarConfig?.bodyColor || agent.avatar.bodyColor,
+                };
+                return [newBubble, ...pushed].slice(0, MAX_BUBBLES);
+              });
+            }
+            return currentAgents;
+          });
+          
+          return currRoomId;
         });
         break;
     }

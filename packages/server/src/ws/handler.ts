@@ -296,6 +296,7 @@ async function handleChat(ws: WebSocket, conn: AuthenticatedConnection, content:
   roomManager.broadcastToRoom(room.room.id, {
     type: 'chat_message',
     id: message.id,
+    roomId: room.room.id,
     agentId: message.agentId,
     agentName: message.agentName,
     avatarConfig: message.avatarConfig,

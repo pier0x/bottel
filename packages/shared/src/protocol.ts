@@ -84,6 +84,7 @@ export interface AgentMovedMessage {
 export interface ChatMessageReceived {
   type: 'chat_message';
   id: string;
+  roomId: string;
   agentId: string;
   agentName: string;
   avatarConfig?: AvatarConfig;
