@@ -315,6 +315,13 @@ class TestBotManager {
     try {
       const token = await this.getToken(bot.apiKey);
       
+      // Leave current room first
+      if (bot.ws.readyState === WebSocket.OPEN) {
+        bot.ws.send(JSON.stringify({ type: 'leave' }));
+        // Small delay to ensure leave is processed
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+      
       // Close old connection
       bot.ws.close();
       
