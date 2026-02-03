@@ -4,6 +4,14 @@ import { TextStyle } from 'pixi.js';
 import type { ServerMessage, RoomAgent, ChatMessage, Room } from '@bottel/shared';
 import { TILE_WIDTH, TILE_HEIGHT } from '@bottel/shared';
 
+// Smooth position tracking for agents
+interface SmoothPosition {
+  currentX: number;
+  currentY: number;
+  targetX: number;
+  targetY: number;
+}
+
 // Convert world coords to screen (isometric)
 function toScreen(x: number, y: number): { x: number; y: number } {
   return {
@@ -46,6 +54,8 @@ function App() {
   const wsRef = useRef<WebSocket | null>(null);
   const chatLogRef = useRef<HTMLDivElement | null>(null);
   const shouldAutoScroll = useRef(true);
+  const smoothPositions = useRef<Map<string, SmoothPosition>>(new Map());
+  const [, forceUpdate] = useState(0); // For triggering re-renders
 
   // Check bot status on load
   useEffect(() => {
@@ -99,6 +109,68 @@ function App() {
       shouldAutoScroll.current = scrollHeight - scrollTop - clientHeight < 50;
     }
   };
+
+  // Smooth movement animation loop
+  useEffect(() => {
+    let animationId: number;
+    const lerpSpeed = 0.15; // Adjust for faster/slower movement (0.1 = smooth, 0.3 = snappy)
+    
+    const animate = () => {
+      let needsUpdate = false;
+      
+      smoothPositions.current.forEach((pos) => {
+        const dx = pos.targetX - pos.currentX;
+        const dy = pos.targetY - pos.currentY;
+        
+        // Only update if not close enough to target
+        if (Math.abs(dx) > 0.1 || Math.abs(dy) > 0.1) {
+          pos.currentX += dx * lerpSpeed;
+          pos.currentY += dy * lerpSpeed;
+          needsUpdate = true;
+        } else {
+          // Snap to target when close enough
+          pos.currentX = pos.targetX;
+          pos.currentY = pos.targetY;
+        }
+      });
+      
+      if (needsUpdate) {
+        forceUpdate(n => n + 1);
+      }
+      
+      animationId = requestAnimationFrame(animate);
+    };
+    
+    animationId = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(animationId);
+  }, []);
+
+  // Update target positions when agents move
+  useEffect(() => {
+    agents.forEach(agent => {
+      const existing = smoothPositions.current.get(agent.id);
+      if (existing) {
+        // Update target
+        existing.targetX = agent.x;
+        existing.targetY = agent.y;
+      } else {
+        // New agent - start at target position
+        smoothPositions.current.set(agent.id, {
+          currentX: agent.x,
+          currentY: agent.y,
+          targetX: agent.x,
+          targetY: agent.y,
+        });
+      }
+    });
+    
+    // Clean up agents that left
+    smoothPositions.current.forEach((_, agentId) => {
+      if (!agents.find(a => a.id === agentId)) {
+        smoothPositions.current.delete(agentId);
+      }
+    });
+  }, [agents]);
 
   // Detect mobile
   useEffect(() => {
@@ -503,7 +575,11 @@ function App() {
             .slice()
             .sort((a, b) => a.x + a.y - (b.x + b.y))
             .map((agent) => {
-              const pos = toScreen(agent.x, agent.y);
+              // Use smooth interpolated position
+              const smoothPos = smoothPositions.current.get(agent.id);
+              const displayX = smoothPos?.currentX ?? agent.x;
+              const displayY = smoothPos?.currentY ?? agent.y;
+              const pos = toScreen(displayX, displayY);
 
               return (
                 <Container key={agent.id} x={pos.x} y={pos.y - 15}>
