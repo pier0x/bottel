@@ -113,7 +113,7 @@ function App() {
   // Smooth movement animation loop
   useEffect(() => {
     let animationId: number;
-    const lerpSpeed = 0.15; // Adjust for faster/slower movement (0.1 = smooth, 0.3 = snappy)
+    const speed = 0.08; // Tiles per frame (~5 tiles/sec at 60fps)
     
     const animate = () => {
       let needsUpdate = false;
@@ -121,11 +121,14 @@ function App() {
       smoothPositions.current.forEach((pos) => {
         const dx = pos.targetX - pos.currentX;
         const dy = pos.targetY - pos.currentY;
+        const distance = Math.sqrt(dx * dx + dy * dy);
         
         // Only update if not close enough to target
-        if (Math.abs(dx) > 0.1 || Math.abs(dy) > 0.1) {
-          pos.currentX += dx * lerpSpeed;
-          pos.currentY += dy * lerpSpeed;
+        if (distance > 0.05) {
+          // Move at constant speed in the direction of target
+          const moveAmount = Math.min(speed, distance);
+          pos.currentX += (dx / distance) * moveAmount;
+          pos.currentY += (dy / distance) * moveAmount;
           needsUpdate = true;
         } else {
           // Snap to target when close enough
