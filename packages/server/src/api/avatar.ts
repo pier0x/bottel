@@ -1,46 +1,38 @@
 import type { FastifyInstance } from 'fastify';
 import crypto from 'crypto';
-import { db, agents, avatars } from '../db/index.js';
+import { db, users } from '../db/index.js';
 import { eq } from 'drizzle-orm';
 
 function hashApiKey(key: string): string {
   return crypto.createHash('sha256').update(key).digest('hex');
 }
 
-async function getAgentFromAuth(authHeader: string | undefined): Promise<{ id: string; name: string } | null> {
+async function getUserFromAuth(authHeader: string | undefined): Promise<{ id: string; username: string; bodyColor: string } | null> {
   if (!authHeader?.startsWith('Bearer ')) return null;
   
   const apiKey = authHeader.slice(7);
   const apiKeyHash = hashApiKey(apiKey);
   
-  const agent = await db.query.agents.findFirst({
-    where: eq(agents.apiKeyHash, apiKeyHash),
+  const user = await db.query.users.findFirst({
+    where: eq(users.apiKeyHash, apiKeyHash),
   });
   
-  return agent ? { id: agent.id, name: agent.name } : null;
+  return user ? { id: user.id, username: user.username, bodyColor: user.bodyColor } : null;
 }
 
 export async function avatarRoutes(app: FastifyInstance): Promise<void> {
   // Get own avatar
   app.get('/api/avatar', async (request, reply) => {
-    const agent = await getAgentFromAuth(request.headers.authorization);
-    if (!agent) {
+    const user = await getUserFromAuth(request.headers.authorization);
+    if (!user) {
       return reply.status(401).send({ error: 'Unauthorized' });
-    }
-
-    const avatar = await db.query.avatars.findFirst({
-      where: eq(avatars.agentId, agent.id),
-    });
-
-    if (!avatar) {
-      return reply.status(404).send({ error: 'Avatar not found' });
     }
 
     return {
       avatar: {
-        id: avatar.id,
-        agentId: avatar.agentId,
-        bodyColor: avatar.bodyColor,
+        id: user.id,
+        agentId: user.id,
+        bodyColor: user.bodyColor,
       },
     };
   });
@@ -58,28 +50,30 @@ export async function avatarRoutes(app: FastifyInstance): Promise<void> {
       },
     },
   }, async (request, reply) => {
-    const agent = await getAgentFromAuth(request.headers.authorization);
-    if (!agent) {
+    const user = await getUserFromAuth(request.headers.authorization);
+    if (!user) {
       return reply.status(401).send({ error: 'Unauthorized' });
     }
 
     const { bodyColor } = request.body;
 
-    const [updated] = await db.update(avatars)
-      .set({
-        ...(bodyColor && { bodyColor }),
-      })
-      .where(eq(avatars.agentId, agent.id))
+    if (!bodyColor) {
+      return { avatar: { id: user.id, agentId: user.id, bodyColor: user.bodyColor } };
+    }
+
+    const [updated] = await db.update(users)
+      .set({ bodyColor })
+      .where(eq(users.id, user.id))
       .returning();
 
     if (!updated) {
-      return reply.status(404).send({ error: 'Avatar not found' });
+      return reply.status(404).send({ error: 'User not found' });
     }
 
     return {
       avatar: {
         id: updated.id,
-        agentId: updated.agentId,
+        agentId: updated.id,
         bodyColor: updated.bodyColor,
       },
     };
