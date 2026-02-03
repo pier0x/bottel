@@ -291,6 +291,7 @@ async function handleChat(ws: WebSocket, conn: AuthenticatedConnection, content:
     id: message.id,
     agentId: message.agentId,
     agentName: message.agentName,
+    avatarConfig: message.avatarConfig,
     content: message.content,
     timestamp: message.createdAt.toISOString(),
   });

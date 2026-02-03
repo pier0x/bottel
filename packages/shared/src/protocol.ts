@@ -1,4 +1,4 @@
-import type { Avatar, RoomState, RoomAgent, ChatMessage, Room } from './types.js';
+import type { Avatar, RoomState, RoomAgent, ChatMessage, Room, AvatarConfig } from './types.js';
 
 // ============================================
 // Client -> Server Messages
@@ -86,6 +86,7 @@ export interface ChatMessageReceived {
   id: string;
   agentId: string;
   agentName: string;
+  avatarConfig?: AvatarConfig;
   content: string;
   timestamp: string;
 }

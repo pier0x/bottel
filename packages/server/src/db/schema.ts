@@ -39,6 +39,8 @@ export const messages = pgTable('messages', {
   id: uuid('id').primaryKey().defaultRandom(),
   roomId: uuid('room_id').references(() => rooms.id, { onDelete: 'cascade' }).notNull(),
   agentId: uuid('agent_id').references(() => agents.id, { onDelete: 'set null' }),
+  agentName: varchar('agent_name', { length: 32 }), // Snapshot of name at message time
+  avatarConfig: jsonb('avatar_config').$type<{ bodyColor: string }>(), // Snapshot of avatar at message time
   content: text('content').notNull(),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 });

@@ -44,7 +44,6 @@ function App() {
   const [botsRunning, setBotsRunning] = useState(false);
   const [botsLoading, setBotsLoading] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
-  const agentColorsRef = useRef<Map<string, string>>(new Map()); // agentId -> bodyColor
 
   // Check bot status on load
   useEffect(() => {
@@ -145,20 +144,10 @@ function App() {
         setRoom(msg.room);
         setAgents(msg.agents);
         setMessages(msg.messages);
-        // Store agent colors for chat log
-        msg.agents.forEach((agent: RoomAgent) => {
-          if (agent.avatar?.bodyColor) {
-            agentColorsRef.current.set(agent.id, agent.avatar.bodyColor);
-          }
-        });
         break;
 
       case 'agent_joined':
         setAgents((prev) => [...prev, msg.agent]);
-        // Store agent color
-        if (msg.agent.avatar?.bodyColor) {
-          agentColorsRef.current.set(msg.agent.id, msg.agent.avatar.bodyColor);
-        }
         break;
 
       case 'agent_left':
@@ -181,6 +170,7 @@ function App() {
             roomId: '',
             agentId: msg.agentId,
             agentName: msg.agentName,
+            avatarConfig: msg.avatarConfig,
             content: msg.content,
             createdAt: new Date(msg.timestamp),
           },
@@ -202,7 +192,7 @@ function App() {
                 x: screenPos.x,
                 slot: 0,
                 timestamp: Date.now(),
-                bodyColor: agent.avatar.bodyColor,
+                bodyColor: msg.avatarConfig?.bodyColor || agent.avatar.bodyColor,
               };
               return [newBubble, ...pushed].slice(0, MAX_BUBBLES);
             });
@@ -600,8 +590,8 @@ function App() {
               <span style={{ fontSize: 12, opacity: 0.5 }}>{messages.length} messages</span>
             </h3>
             {messages.slice(-30).map((m) => {
-              // Get body color from our persistent map (survives agent leaving)
-              const bodyColor = agentColorsRef.current.get(m.agentId) || '#666';
+              // Get body color from message's avatar config snapshot
+              const bodyColor = m.avatarConfig?.bodyColor || '#666';
               
               return (
                 <div key={m.id} style={{ marginBottom: 10, fontSize: 13, display: 'flex', alignItems: 'flex-start', gap: 8 }}>

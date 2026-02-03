@@ -180,21 +180,32 @@ class RoomManager {
       limit: MESSAGE_HISTORY_LIMIT,
     });
 
-    // Get agent names for messages
+    // Build message history (use stored name/avatar, fallback to lookup for old messages)
     const messageHistory: ChatMessage[] = [];
     for (const msg of recentMessages.reverse()) {
-      let agentName = 'Unknown';
-      if (msg.agentId) {
+      let agentName = msg.agentName || 'Unknown';
+      let avatarConfig = msg.avatarConfig;
+      
+      // Fallback for old messages without stored name/avatar
+      if (!msg.agentName && msg.agentId) {
         const agent = await db.query.agents.findFirst({
           where: eq(agents.id, msg.agentId),
         });
         if (agent) agentName = agent.name;
+        
+        // Try to get avatar too
+        const avatar = await db.query.avatars.findFirst({
+          where: eq(avatars.agentId, msg.agentId),
+        });
+        if (avatar) avatarConfig = { bodyColor: avatar.bodyColor };
       }
+      
       messageHistory.push({
         id: msg.id,
         roomId: msg.roomId,
         agentId: msg.agentId || '',
         agentName,
+        avatarConfig: avatarConfig || undefined,
         content: msg.content,
         createdAt: msg.createdAt,
       });
@@ -413,10 +424,15 @@ class RoomManager {
     const agent = room.agents.get(agentId);
     if (!agent) return null;
 
-    // Persist to database
+    // Create avatar config snapshot
+    const avatarConfig = { bodyColor: agent.avatar.bodyColor };
+
+    // Persist to database with agent name and avatar snapshot
     const [inserted] = await db.insert(messages).values({
       roomId,
       agentId,
+      agentName: agent.name,
+      avatarConfig,
       content,
     }).returning();
 
@@ -425,6 +441,7 @@ class RoomManager {
       roomId,
       agentId,
       agentName: agent.name,
+      avatarConfig,
       content,
       createdAt: inserted.createdAt,
     };

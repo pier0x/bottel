@@ -40,12 +40,18 @@ export interface RoomAgent {
   y: number;
 }
 
+// Avatar config snapshot for messages
+export interface AvatarConfig {
+  bodyColor: string;
+}
+
 // Chat message
 export interface ChatMessage {
   id: string;
   roomId: string;
   agentId: string;
   agentName: string;
+  avatarConfig?: AvatarConfig; // Snapshot of avatar at message time
   content: string;
   createdAt: Date;
 }
