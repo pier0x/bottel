@@ -267,9 +267,9 @@ function handleMove(ws: WebSocket, conn: AuthenticatedConnection, x: number, y: 
     return;
   }
 
-  const success = roomManager.moveAgent(conn.agentId, x, y);
-  if (!success) {
-    send(ws, { type: 'error', code: 'INVALID_MOVE', message: 'Cannot move there (or already walking)' });
+  const result = roomManager.moveAgent(conn.agentId, x, y);
+  if (!result.success) {
+    send(ws, { type: 'error', code: 'INVALID_MOVE', message: result.error || 'Cannot move there' });
     return;
   }
 

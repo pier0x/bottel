@@ -320,29 +320,35 @@ class RoomManager {
     return roomId;
   }
 
-  moveAgent(agentId: string, x: number, y: number): boolean {
+  moveAgent(agentId: string, x: number, y: number): { success: boolean; error?: string } {
     const roomId = this.agentRooms.get(agentId);
-    if (!roomId) return false;
+    if (!roomId) return { success: false, error: 'Agent not in any room' };
 
     const room = this.rooms.get(roomId);
-    if (!room) return false;
+    if (!room) return { success: false, error: 'Room not found' };
 
     const agent = room.agents.get(agentId);
-    if (!agent) return false;
+    if (!agent) return { success: false, error: 'Agent not found in room' };
 
     // Don't allow new movement while walking
     if (agent.isWalking) {
-      return false;
+      return { success: false, error: 'Already walking, wait until movement completes' };
     }
 
-    // Validate position
+    // Validate position bounds
     if (x < 0 || y < 0 || x >= room.room.width || y >= room.room.height) {
-      return false;
+      return { 
+        success: false, 
+        error: `Position (${x},${y}) out of bounds. Room is ${room.room.width}x${room.room.height}` 
+      };
     }
 
     // Check walkability of destination
     if (room.room.tiles[y]?.[x] !== 0) {
-      return false;
+      return { 
+        success: false, 
+        error: `Tile (${x},${y}) is not walkable (blocked)` 
+      };
     }
 
     // Find path to destination
@@ -358,12 +364,15 @@ class RoomManager {
 
     if (path.length === 0 && (agent.x !== x || agent.y !== y)) {
       // No path found and not already at destination
-      return false;
+      return { 
+        success: false, 
+        error: `No walkable path from (${agent.x},${agent.y}) to (${x},${y})` 
+      };
     }
 
     if (path.length === 0) {
       // Already at destination
-      return true;
+      return { success: true };
     }
 
     // Start walking
@@ -371,7 +380,7 @@ class RoomManager {
     agent.walkPath = path;
     this.startWalking(roomId, agentId);
 
-    return true;
+    return { success: true };
   }
 
   private startWalking(roomId: string, agentId: string): void {
