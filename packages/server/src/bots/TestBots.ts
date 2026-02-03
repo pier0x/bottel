@@ -154,6 +154,8 @@ class TestBotManager {
   }
 
   private async registerBot(name: string): Promise<{ apiKey: string; name: string }> {
+    console.log(`[${name}] Registering at ${this.baseUrl}/api/auth/register`);
+    
     const res = await fetch(`${this.baseUrl}/api/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -161,18 +163,27 @@ class TestBotManager {
     });
 
     if (!res.ok) {
+      const errorText = await res.text();
+      console.log(`[${name}] Registration failed (${res.status}): ${errorText}`);
+      
       // Try with random suffix
       const newName = `${name}${Math.floor(Math.random() * 1000)}`;
+      console.log(`[${name}] Retrying as ${newName}`);
       const retry = await fetch(`${this.baseUrl}/api/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: newName }),
       });
-      if (!retry.ok) throw new Error(`Failed to register ${newName}`);
+      if (!retry.ok) {
+        const retryError = await retry.text();
+        throw new Error(`Failed to register ${newName}: ${retryError}`);
+      }
       const data = await retry.json();
+      console.log(`[${newName}] ✅ Registered`);
       return { ...data, name: newName };
     }
     const data = await res.json();
+    console.log(`[${name}] ✅ Registered`);
     return { ...data, name };
   }
 
@@ -199,7 +210,9 @@ class TestBotManager {
 
   private async createBot(baseName: string): Promise<Bot | null> {
     const { apiKey, name } = await this.registerBot(baseName);
+    console.log(`[${name}] Getting token...`);
     const token = await this.getToken(apiKey);
+    console.log(`[${name}] Connecting to ${this.wsUrl}...`);
 
     return new Promise((resolve, reject) => {
       const ws = new WebSocket(this.wsUrl);
