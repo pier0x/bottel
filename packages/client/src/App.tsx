@@ -1043,9 +1043,11 @@ function App() {
                 {room.description}
               </div>
             )}
-            <div style={{ fontSize: 12, opacity: 0.5 }}>
-              Size: {room.width}×{room.height}
-            </div>
+            {room.ownerUsername && (
+              <div style={{ fontSize: 12, opacity: 0.6, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span>👤</span> Owner: <span style={{ fontWeight: 500 }}>{room.ownerUsername}</span>
+              </div>
+            )}
           </div>
         </>
       )}

@@ -190,12 +190,24 @@ class RoomManager {
       });
     }
 
+    // Fetch owner username if room has an owner
+    let ownerUsername: string | null = null;
+    if (roomData.ownerId) {
+      const owner = await db.query.users.findFirst({
+        where: eq(users.id, roomData.ownerId),
+      });
+      if (owner) {
+        ownerUsername = owner.username;
+      }
+    }
+
     const room: Room = {
       id: roomData.id,
       name: roomData.name,
       description: roomData.description,
       slug: roomData.slug,
       ownerId: roomData.ownerId,
+      ownerUsername,
       width: roomData.width,
       height: roomData.height,
       tiles: roomData.tiles || this.generateDefaultTiles(roomData.width, roomData.height),

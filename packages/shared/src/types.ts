@@ -25,6 +25,7 @@ export interface Room {
   description: string | null;
   slug: string;
   ownerId: string | null;
+  ownerUsername: string | null;
   width: number;
   height: number;
   tiles: number[][]; // 0 = walkable, 1 = blocked
