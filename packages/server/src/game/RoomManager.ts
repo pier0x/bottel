@@ -307,6 +307,12 @@ class RoomManager {
         clearInterval(agent.walkInterval);
       }
       room.agents.delete(agentId);
+      
+      // Unload room if no agents left (keep spectators can still watch empty room briefly)
+      if (room.agents.size === 0) {
+        console.log(`🚪 Unloading room ${room.room.name} (no agents left)`);
+        this.rooms.delete(roomId);
+      }
     }
 
     this.agentRooms.delete(agentId);
@@ -509,6 +515,25 @@ class RoomManager {
       room.spectators.delete(ws);
       console.log(`Spectator removed from room ${room.room.name}. Total spectators: ${room.spectators.size}`);
     }
+  }
+
+  // Get list of active rooms (rooms with at least 1 agent), sorted by agent count
+  getActiveRooms(): { id: string; name: string; slug: string; agentCount: number }[] {
+    const activeRooms: { id: string; name: string; slug: string; agentCount: number }[] = [];
+    
+    this.rooms.forEach((room) => {
+      if (room.agents.size > 0) {
+        activeRooms.push({
+          id: room.room.id,
+          name: room.room.name,
+          slug: room.room.slug,
+          agentCount: room.agents.size,
+        });
+      }
+    });
+    
+    // Sort by agent count descending
+    return activeRooms.sort((a, b) => b.agentCount - a.agentCount);
   }
 }
 

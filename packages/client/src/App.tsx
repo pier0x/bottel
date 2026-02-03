@@ -51,6 +51,9 @@ function App() {
   const [isMobile, setIsMobile] = useState(false);
   const [botsRunning, setBotsRunning] = useState(false);
   const [botsLoading, setBotsLoading] = useState(false);
+  const [navigatorOpen, setNavigatorOpen] = useState(false);
+  const [activeRooms, setActiveRooms] = useState<{ id: string; name: string; slug: string; agentCount: number }[]>([]);
+  const [currentRoomId, setCurrentRoomId] = useState<string | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const chatLogRef = useRef<HTMLDivElement | null>(null);
   const shouldAutoScroll = useRef(true);
@@ -64,6 +67,34 @@ function App() {
       .then(data => setBotsRunning(data.running))
       .catch(() => {});
   }, []);
+
+  // Fetch active rooms periodically
+  useEffect(() => {
+    const fetchRooms = () => {
+      fetch('/api/rooms/active')
+        .then(res => res.json())
+        .then(data => setActiveRooms(data.rooms || []))
+        .catch(() => {});
+    };
+    
+    fetchRooms();
+    const interval = setInterval(fetchRooms, 3000); // Refresh every 3 seconds
+    return () => clearInterval(interval);
+  }, []);
+
+  // Switch room function
+  const switchRoom = (roomId: string) => {
+    if (wsRef.current && wsRef.current.readyState === 1) {
+      // Clear current room state
+      setAgents([]);
+      setMessages([]);
+      setFloatingBubbles([]);
+      smoothPositions.current.clear();
+      
+      // Join new room
+      wsRef.current.send(JSON.stringify({ type: 'join', roomId }));
+    }
+  };
 
   // Toggle bots
   const toggleBots = async () => {
@@ -250,6 +281,7 @@ function App() {
         setRoom(msg.room);
         setAgents(msg.agents);
         setMessages(msg.messages);
+        setCurrentRoomId(msg.room.id);
         break;
 
       case 'agent_joined':
@@ -783,6 +815,89 @@ function App() {
           <div style={{ fontSize: 12, opacity: 0.6 }}>{room.width}×{room.height}</div>
         </div>
       )}
+
+      {/* Room Navigator toggle button */}
+      <button
+        onClick={() => setNavigatorOpen(!navigatorOpen)}
+        style={{
+          position: 'absolute',
+          bottom: navigatorOpen ? 76 : 16,
+          left: 16,
+          zIndex: 20,
+          background: 'rgba(0,0,0,0.7)',
+          border: 'none',
+          padding: '8px 12px',
+          borderRadius: 8,
+          color: '#fff',
+          fontSize: 12,
+          cursor: 'pointer',
+          backdropFilter: 'blur(8px)',
+          transition: 'bottom 0.3s ease',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6,
+        }}
+      >
+        🚪 {navigatorOpen ? 'Hide' : 'Rooms'} {activeRooms.length > 0 && `(${activeRooms.length})`}
+      </button>
+
+      {/* Room Navigator - horizontal bar at bottom */}
+      <div
+        style={{
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: isMobile ? 0 : 340, // Leave space for chat log on desktop
+          height: navigatorOpen ? 60 : 0,
+          background: 'rgba(0,0,0,0.85)',
+          borderRadius: '12px 12px 0 0',
+          padding: navigatorOpen ? '10px 16px' : 0,
+          overflowX: 'auto',
+          overflowY: 'hidden',
+          zIndex: 15,
+          backdropFilter: 'blur(8px)',
+          transition: 'height 0.3s ease, padding 0.3s ease',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+        }}
+      >
+        {navigatorOpen && activeRooms.length === 0 && (
+          <div style={{ opacity: 0.5, fontSize: 13, fontStyle: 'italic' }}>
+            No active rooms. Start some bots!
+          </div>
+        )}
+        {navigatorOpen && activeRooms.map((r) => (
+          <button
+            key={r.id}
+            onClick={() => switchRoom(r.slug)}
+            style={{
+              background: currentRoomId === r.id ? '#3B82F6' : 'rgba(255,255,255,0.1)',
+              border: currentRoomId === r.id ? '2px solid #60A5FA' : '2px solid transparent',
+              borderRadius: 8,
+              padding: '8px 16px',
+              color: '#fff',
+              fontSize: 13,
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              transition: 'all 0.2s',
+            }}
+          >
+            <span style={{ fontWeight: 600 }}>{r.name}</span>
+            <span style={{
+              background: 'rgba(0,0,0,0.3)',
+              padding: '2px 6px',
+              borderRadius: 4,
+              fontSize: 11,
+            }}>
+              🤖 {r.agentCount}
+            </span>
+          </button>
+        ))}
+      </div>
     </div>
   );
 }

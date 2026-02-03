@@ -1,8 +1,16 @@
 import type { FastifyInstance } from 'fastify';
 import { db, rooms } from '../db/index.js';
 import { eq } from 'drizzle-orm';
+import { roomManager } from '../game/RoomManager.js';
 
 export async function roomRoutes(app: FastifyInstance): Promise<void> {
+  // List active rooms (rooms with at least 1 AI), sorted by population
+  app.get('/api/rooms/active', async () => {
+    return {
+      rooms: roomManager.getActiveRooms(),
+    };
+  });
+
   // List all public rooms
   app.get('/api/rooms', async () => {
     const allRooms = await db.query.rooms.findMany({
