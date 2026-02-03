@@ -234,23 +234,28 @@ class TestBotManager {
       let position = { x: 5, y: 5 };
 
       const timeout = setTimeout(() => {
+        console.log(`[${name}] ⏰ Connection timeout after 10s`);
         ws.close();
         reject(new Error('Connection timeout'));
       }, 10000);
 
       ws.on('open', () => {
+        console.log(`[${name}] 🔌 WebSocket opened, sending auth`);
         ws.send(JSON.stringify({ type: 'auth', token }));
       });
 
       ws.on('message', (data) => {
         const msg = JSON.parse(data.toString());
+        console.log(`[${name}] 📨 Received: ${msg.type}`);
 
         if (msg.type === 'auth_ok') {
+          console.log(`[${name}] ✅ Auth OK, joining lobby`);
           ws.send(JSON.stringify({ type: 'join', roomId: 'lobby' }));
         } else if (msg.type === 'room_state') {
           clearTimeout(timeout);
           const me = msg.agents.find((a: any) => a.name === name);
           if (me) position = { x: me.x, y: me.y };
+          console.log(`[${name}] 🏠 Joined room successfully`);
           resolve({ 
             ws, 
             name, 
@@ -263,13 +268,23 @@ class TestBotManager {
           });
         } else if (msg.type === 'error') {
           clearTimeout(timeout);
+          console.log(`[${name}] ❌ Server error: ${msg.message}`);
           reject(new Error(msg.message));
+        } else if (msg.type === 'auth_error') {
+          clearTimeout(timeout);
+          console.log(`[${name}] ❌ Auth error: ${msg.error}`);
+          reject(new Error(msg.error));
         }
       });
 
       ws.on('error', (err) => {
+        console.log(`[${name}] ❌ WebSocket error: ${err.message}`);
         clearTimeout(timeout);
         reject(err);
+      });
+
+      ws.on('close', (code, reason) => {
+        console.log(`[${name}] 🔒 WebSocket closed: ${code} ${reason}`);
       });
     });
   }
