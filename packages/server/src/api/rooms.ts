@@ -5,9 +5,10 @@ import { roomManager } from '../game/RoomManager.js';
 
 export async function roomRoutes(app: FastifyInstance): Promise<void> {
   // List active rooms (rooms with at least 1 AI), sorted by population
+  // Lobby is always included even if empty
   app.get('/api/rooms/active', async () => {
     return {
-      rooms: roomManager.getActiveRooms(),
+      rooms: await roomManager.getActiveRooms(),
     };
   });
 
