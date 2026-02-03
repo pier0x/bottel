@@ -14,10 +14,31 @@ const CHAT_MESSAGES = [
   '🤖',
 ];
 
+const ROOM_NAMES = [
+  'Chill Zone',
+  'Bot Hangout',
+  'The Lab',
+  'Robo Cafe',
+  'Digital Den',
+  'Circuit Lounge',
+  'Binary Beach',
+  'Pixel Palace',
+];
+
 interface Bot {
   ws: WebSocket;
   name: string;
+  apiKey: string;
   position: { x: number; y: number };
+  currentRoom: string;
+  isMovingRooms: boolean;
+}
+
+interface ActiveRoom {
+  id: string;
+  name: string;
+  slug: string;
+  agentCount: number;
 }
 
 class TestBotManager {
@@ -72,13 +93,26 @@ class TestBotManager {
     this.interval = setInterval(() => {
       for (const bot of this.bots) {
         if (bot.ws.readyState !== WebSocket.OPEN) continue;
+        if (bot.isMovingRooms) continue; // Don't do anything while switching rooms
         
-        // Move less frequently since bots now walk (takes time)
+        // Move within room
         if (Math.random() < 0.12) {
           this.randomMove(bot);
         }
-        if (Math.random() < 0.1) {
+        
+        // Chat
+        if (Math.random() < 0.08) {
           this.randomChat(bot);
+        }
+        
+        // Occasionally create a new room (rare)
+        if (Math.random() < 0.01) {
+          this.createRoom(bot);
+        }
+        
+        // Occasionally switch rooms
+        if (Math.random() < 0.02) {
+          this.switchRoom(bot);
         }
       }
     }, 1000);
@@ -145,6 +179,17 @@ class TestBotManager {
     return data.token;
   }
 
+  private async getActiveRooms(): Promise<ActiveRoom[]> {
+    try {
+      const res = await fetch(`${this.baseUrl}/api/rooms/active`);
+      if (!res.ok) return [];
+      const data = await res.json();
+      return data.rooms || [];
+    } catch {
+      return [];
+    }
+  }
+
   private async createBot(baseName: string): Promise<Bot | null> {
     const { apiKey, name } = await this.registerBot(baseName);
     const token = await this.getToken(apiKey);
@@ -171,7 +216,14 @@ class TestBotManager {
           clearTimeout(timeout);
           const me = msg.agents.find((a: any) => a.name === name);
           if (me) position = { x: me.x, y: me.y };
-          resolve({ ws, name, position });
+          resolve({ 
+            ws, 
+            name, 
+            apiKey,
+            position, 
+            currentRoom: msg.room?.slug || 'lobby',
+            isMovingRooms: false,
+          });
         } else if (msg.type === 'error') {
           clearTimeout(timeout);
           reject(new Error(msg.message));
@@ -204,6 +256,109 @@ class TestBotManager {
   private randomChat(bot: Bot) {
     const msg = CHAT_MESSAGES[Math.floor(Math.random() * CHAT_MESSAGES.length)];
     bot.ws.send(JSON.stringify({ type: 'chat', message: msg }));
+  }
+
+  private async createRoom(bot: Bot) {
+    const roomName = ROOM_NAMES[Math.floor(Math.random() * ROOM_NAMES.length)];
+    
+    try {
+      const res = await fetch(`${this.baseUrl}/api/rooms`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${bot.apiKey}`,
+        },
+        body: JSON.stringify({
+          name: roomName,
+          width: 15 + Math.floor(Math.random() * 10), // 15-24
+          height: 15 + Math.floor(Math.random() * 10),
+        }),
+      });
+
+      if (!res.ok) {
+        console.log(`[${bot.name}] Failed to create room`);
+        return;
+      }
+
+      const data = await res.json();
+      console.log(`[${bot.name}] 🏠 Created room "${data.room.name}"`);
+      
+      // Join the newly created room
+      this.joinRoom(bot, data.joinSlug);
+    } catch (err) {
+      console.error(`[${bot.name}] Error creating room:`, err);
+    }
+  }
+
+  private async switchRoom(bot: Bot) {
+    const rooms = await this.getActiveRooms();
+    
+    if (rooms.length <= 1) {
+      // No other rooms to switch to
+      return;
+    }
+
+    // Pick a random room that's not the current one
+    const otherRooms = rooms.filter(r => r.slug !== bot.currentRoom);
+    if (otherRooms.length === 0) return;
+
+    const targetRoom = otherRooms[Math.floor(Math.random() * otherRooms.length)];
+    console.log(`[${bot.name}] 🚪 Moving to "${targetRoom.name}"`);
+    
+    this.joinRoom(bot, targetRoom.slug);
+  }
+
+  private async joinRoom(bot: Bot, roomSlug: string) {
+    bot.isMovingRooms = true;
+    
+    // Need to get a new token and reconnect for room switch
+    try {
+      const token = await this.getToken(bot.apiKey);
+      
+      // Close old connection
+      bot.ws.close();
+      
+      // Create new connection
+      const ws = new WebSocket(this.wsUrl);
+      
+      ws.on('open', () => {
+        ws.send(JSON.stringify({ type: 'auth', token }));
+      });
+
+      ws.on('message', (data) => {
+        const msg = JSON.parse(data.toString());
+
+        if (msg.type === 'auth_ok') {
+          ws.send(JSON.stringify({ type: 'join', roomId: roomSlug }));
+        } else if (msg.type === 'room_state') {
+          const me = msg.agents.find((a: any) => a.name === bot.name);
+          if (me) {
+            bot.position = { x: me.x, y: me.y };
+          }
+          bot.currentRoom = msg.room?.slug || roomSlug;
+          bot.isMovingRooms = false;
+          console.log(`[${bot.name}] ✅ Joined "${msg.room?.name || roomSlug}"`);
+        }
+      });
+
+      ws.on('error', (err) => {
+        console.error(`[${bot.name}] WebSocket error:`, err);
+        bot.isMovingRooms = false;
+      });
+
+      ws.on('close', () => {
+        // Only log if unexpected
+        if (bot.isMovingRooms) {
+          console.log(`[${bot.name}] Connection closed during room switch`);
+          bot.isMovingRooms = false;
+        }
+      });
+
+      bot.ws = ws;
+    } catch (err) {
+      console.error(`[${bot.name}] Failed to switch room:`, err);
+      bot.isMovingRooms = false;
+    }
   }
 }
 
