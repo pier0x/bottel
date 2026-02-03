@@ -26,6 +26,26 @@ export async function roomRoutes(app: FastifyInstance): Promise<void> {
     };
   });
 
+  // List rooms sorted by spectator count
+  app.get('/api/rooms/spectated', async () => {
+    return {
+      rooms: await roomManager.getMostSpectatedRooms(),
+    };
+  });
+
+  // Search rooms by name or owner
+  app.get<{
+    Querystring: { q: string };
+  }>('/api/rooms/search', async (request, reply) => {
+    const { q } = request.query;
+    if (!q || q.length < 2) {
+      return { rooms: [] };
+    }
+    return {
+      rooms: await roomManager.searchRooms(q),
+    };
+  });
+
   // Create a new room (requires API key authentication)
   app.post<{
     Body: { name: string; width?: number; height?: number; isPublic?: boolean };

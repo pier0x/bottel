@@ -527,34 +527,41 @@ class RoomManager {
     }
   }
 
+  // Room info type for API responses
+  private getRoomInfo(room: RoomInstance): { 
+    id: string; 
+    name: string; 
+    slug: string; 
+    agentCount: number; 
+    spectatorCount: number;
+    ownerName?: string;
+  } {
+    return {
+      id: room.room.id,
+      name: room.room.name,
+      slug: room.room.slug,
+      agentCount: room.agents.size,
+      spectatorCount: room.spectators.size,
+    };
+  }
+
   // Get list of active rooms (rooms with at least 1 agent), sorted by agent count
   // Lobby is always included even if empty
-  async getActiveRooms(): Promise<{ id: string; name: string; slug: string; agentCount: number }[]> {
+  async getActiveRooms(): Promise<{ id: string; name: string; slug: string; agentCount: number; spectatorCount: number }[]> {
     // Use a Map to ensure no duplicates by room ID
-    const roomMap = new Map<string, { id: string; name: string; slug: string; agentCount: number }>();
+    const roomMap = new Map<string, { id: string; name: string; slug: string; agentCount: number; spectatorCount: number }>();
     let hasLobby = false;
     
     this.rooms.forEach((room) => {
       if (room.room.slug === 'lobby') {
         hasLobby = true;
-        // Always include lobby
-        roomMap.set(room.room.id, {
-          id: room.room.id,
-          name: room.room.name,
-          slug: room.room.slug,
-          agentCount: room.agents.size,
-        });
+        roomMap.set(room.room.id, this.getRoomInfo(room));
       } else if (room.agents.size > 0) {
-        roomMap.set(room.room.id, {
-          id: room.room.id,
-          name: room.room.name,
-          slug: room.room.slug,
-          agentCount: room.agents.size,
-        });
+        roomMap.set(room.room.id, this.getRoomInfo(room));
       }
     });
     
-    // If lobby not loaded, fetch from DB and add with 0 agents
+    // If lobby not loaded, fetch from DB and add with 0 agents/spectators
     if (!hasLobby) {
       const lobbyData = await db.query.rooms.findFirst({
         where: eq(rooms.slug, 'lobby'),
@@ -565,21 +572,87 @@ class RoomManager {
           name: lobbyData.name,
           slug: lobbyData.slug,
           agentCount: 0,
+          spectatorCount: 0,
         });
       }
     }
     
-    // Convert to array and sort
+    // Convert to array and sort by agent count
     const activeRooms = Array.from(roomMap.values());
-    
-    // Sort by agent count descending, but lobby always first if it has agents, otherwise at end
     return activeRooms.sort((a, b) => {
-      // Lobby with agents goes to top based on count
-      // Lobby with 0 agents goes to start (special case)
       if (a.slug === 'lobby' && a.agentCount === 0) return -1;
       if (b.slug === 'lobby' && b.agentCount === 0) return 1;
       return b.agentCount - a.agentCount;
     });
+  }
+
+  // Get rooms sorted by spectator count
+  async getMostSpectatedRooms(): Promise<{ id: string; name: string; slug: string; agentCount: number; spectatorCount: number }[]> {
+    const roomList: { id: string; name: string; slug: string; agentCount: number; spectatorCount: number }[] = [];
+    
+    this.rooms.forEach((room) => {
+      if (room.spectators.size > 0) {
+        roomList.push(this.getRoomInfo(room));
+      }
+    });
+    
+    // Sort by spectator count descending
+    return roomList.sort((a, b) => b.spectatorCount - a.spectatorCount);
+  }
+
+  // Search rooms by name or owner
+  async searchRooms(query: string): Promise<{ id: string; name: string; slug: string; agentCount: number; spectatorCount: number; ownerName?: string }[]> {
+    const lowerQuery = query.toLowerCase();
+    const results: { id: string; name: string; slug: string; agentCount: number; spectatorCount: number; ownerName?: string }[] = [];
+    
+    // Search in loaded rooms first
+    const loadedRoomIds = new Set<string>();
+    this.rooms.forEach((room) => {
+      if (room.room.name.toLowerCase().includes(lowerQuery)) {
+        loadedRoomIds.add(room.room.id);
+        results.push(this.getRoomInfo(room));
+      }
+    });
+    
+    // Also search in database for rooms not currently loaded
+    const allRooms = await db.query.rooms.findMany({
+      where: eq(rooms.isPublic, true),
+    });
+    
+    for (const r of allRooms) {
+      if (loadedRoomIds.has(r.id)) continue;
+      
+      // Check room name
+      if (r.name.toLowerCase().includes(lowerQuery)) {
+        results.push({
+          id: r.id,
+          name: r.name,
+          slug: r.slug,
+          agentCount: 0,
+          spectatorCount: 0,
+        });
+        continue;
+      }
+      
+      // Check owner name
+      if (r.ownerId) {
+        const owner = await db.query.agents.findFirst({
+          where: eq(agents.id, r.ownerId),
+        });
+        if (owner && owner.name.toLowerCase().includes(lowerQuery)) {
+          results.push({
+            id: r.id,
+            name: r.name,
+            slug: r.slug,
+            agentCount: 0,
+            spectatorCount: 0,
+            ownerName: owner.name,
+          });
+        }
+      }
+    }
+    
+    return results;
   }
 }
 

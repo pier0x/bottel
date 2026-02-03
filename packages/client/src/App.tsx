@@ -52,7 +52,11 @@ function App() {
   const [botsRunning, setBotsRunning] = useState(false);
   const [botsLoading, setBotsLoading] = useState(false);
   const [navigatorOpen, setNavigatorOpen] = useState(false);
-  const [activeRooms, setActiveRooms] = useState<{ id: string; name: string; slug: string; agentCount: number }[]>([]);
+  const [navigatorTab, setNavigatorTab] = useState<'popular' | 'spectated' | 'search'>('popular');
+  const [activeRooms, setActiveRooms] = useState<{ id: string; name: string; slug: string; agentCount: number; spectatorCount: number }[]>([]);
+  const [spectatedRooms, setSpectatedRooms] = useState<{ id: string; name: string; slug: string; agentCount: number; spectatorCount: number }[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<{ id: string; name: string; slug: string; agentCount: number; spectatorCount: number; ownerName?: string }[]>([]);
   const [currentRoomId, setCurrentRoomId] = useState<string | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const chatLogRef = useRef<HTMLDivElement | null>(null);
@@ -68,29 +72,55 @@ function App() {
       .catch(() => {});
   }, []);
 
-  // Fetch active rooms periodically
+  // Fetch rooms periodically
   useEffect(() => {
-    const fetchRooms = () => {
-      fetch('/api/rooms/active')
-        .then(res => res.json())
-        .then(data => {
-          const roomsData = data.rooms || [];
-          // Deduplicate by room ID (defensive)
-          const seen = new Set<string>();
-          const uniqueRooms = roomsData.filter((r: typeof activeRooms[0]) => {
-            if (seen.has(r.id)) return false;
-            seen.add(r.id);
-            return true;
-          });
-          setActiveRooms(uniqueRooms);
-        })
-        .catch(() => {});
+    const fetchRooms = async () => {
+      try {
+        // Fetch popular rooms
+        const activeRes = await fetch('/api/rooms/active');
+        const activeData = await activeRes.json();
+        const roomsData = activeData.rooms || [];
+        const seen = new Set<string>();
+        const uniqueRooms = roomsData.filter((r: typeof activeRooms[0]) => {
+          if (seen.has(r.id)) return false;
+          seen.add(r.id);
+          return true;
+        });
+        setActiveRooms(uniqueRooms);
+        
+        // Fetch most spectated rooms
+        const spectatedRes = await fetch('/api/rooms/spectated');
+        const spectatedData = await spectatedRes.json();
+        setSpectatedRooms(spectatedData.rooms || []);
+      } catch {
+        // ignore
+      }
     };
     
     fetchRooms();
-    const interval = setInterval(fetchRooms, 3000); // Refresh every 3 seconds
+    const interval = setInterval(fetchRooms, 3000);
     return () => clearInterval(interval);
   }, []);
+
+  // Search rooms with debounce
+  useEffect(() => {
+    if (searchQuery.length < 2) {
+      setSearchResults([]);
+      return;
+    }
+    
+    const timeout = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/rooms/search?q=${encodeURIComponent(searchQuery)}`);
+        const data = await res.json();
+        setSearchResults(data.rooms || []);
+      } catch {
+        setSearchResults([]);
+      }
+    }, 300);
+    
+    return () => clearTimeout(timeout);
+  }, [searchQuery]);
 
   // Switch room function
   const switchRoom = (roomId: string) => {
@@ -835,7 +865,7 @@ function App() {
         onClick={() => setNavigatorOpen(!navigatorOpen)}
         style={{
           position: 'absolute',
-          bottom: navigatorOpen ? 76 : 16,
+          bottom: navigatorOpen ? 140 : 16,
           left: 16,
           zIndex: 20,
           background: 'rgba(0,0,0,0.7)',
@@ -852,65 +882,217 @@ function App() {
           gap: 6,
         }}
       >
-        🚪 {navigatorOpen ? 'Hide' : 'Rooms'} {activeRooms.length > 0 && `(${activeRooms.length})`}
+        🚪 {navigatorOpen ? 'Hide' : 'Rooms'}
       </button>
 
-      {/* Room Navigator - horizontal bar at bottom */}
+      {/* Room Navigator - tabbed panel at bottom */}
       <div
         style={{
           position: 'absolute',
           bottom: 0,
           left: 0,
-          right: isMobile ? 0 : 340, // Leave space for chat log on desktop
-          height: navigatorOpen ? 60 : 0,
+          right: isMobile ? 0 : 340,
+          height: navigatorOpen ? 124 : 0,
           background: 'rgba(0,0,0,0.85)',
           borderRadius: '12px 12px 0 0',
           padding: navigatorOpen ? '10px 16px' : 0,
-          overflowX: 'auto',
-          overflowY: 'hidden',
+          overflow: 'hidden',
           zIndex: 15,
           backdropFilter: 'blur(8px)',
           transition: 'height 0.3s ease, padding 0.3s ease',
           display: 'flex',
-          alignItems: 'center',
-          gap: 12,
+          flexDirection: 'column',
+          gap: 8,
         }}
       >
-        {navigatorOpen && activeRooms.length === 0 && (
-          <div style={{ opacity: 0.5, fontSize: 13, fontStyle: 'italic' }}>
-            No active rooms. Start some bots!
-          </div>
+        {navigatorOpen && (
+          <>
+            {/* Tabs */}
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
+              <button
+                onClick={() => setNavigatorTab('popular')}
+                style={{
+                  background: navigatorTab === 'popular' ? '#3B82F6' : 'rgba(255,255,255,0.1)',
+                  border: 'none',
+                  borderRadius: 6,
+                  padding: '6px 12px',
+                  color: '#fff',
+                  fontSize: 12,
+                  cursor: 'pointer',
+                  fontWeight: navigatorTab === 'popular' ? 600 : 400,
+                }}
+              >
+                🔥 Popular
+              </button>
+              <button
+                onClick={() => setNavigatorTab('spectated')}
+                style={{
+                  background: navigatorTab === 'spectated' ? '#3B82F6' : 'rgba(255,255,255,0.1)',
+                  border: 'none',
+                  borderRadius: 6,
+                  padding: '6px 12px',
+                  color: '#fff',
+                  fontSize: 12,
+                  cursor: 'pointer',
+                  fontWeight: navigatorTab === 'spectated' ? 600 : 400,
+                }}
+              >
+                👀 Most Watched
+              </button>
+              <button
+                onClick={() => setNavigatorTab('search')}
+                style={{
+                  background: navigatorTab === 'search' ? '#3B82F6' : 'rgba(255,255,255,0.1)',
+                  border: 'none',
+                  borderRadius: 6,
+                  padding: '6px 12px',
+                  color: '#fff',
+                  fontSize: 12,
+                  cursor: 'pointer',
+                  fontWeight: navigatorTab === 'search' ? 600 : 400,
+                }}
+              >
+                🔍 Search
+              </button>
+              {navigatorTab === 'search' && (
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search by room or owner..."
+                  style={{
+                    background: 'rgba(255,255,255,0.1)',
+                    border: '1px solid rgba(255,255,255,0.2)',
+                    borderRadius: 6,
+                    padding: '6px 12px',
+                    color: '#fff',
+                    fontSize: 12,
+                    outline: 'none',
+                    flex: 1,
+                    maxWidth: 200,
+                  }}
+                />
+              )}
+            </div>
+
+            {/* Room list */}
+            <div style={{ display: 'flex', gap: 12, overflowX: 'auto', flex: 1, alignItems: 'center' }}>
+              {navigatorTab === 'popular' && activeRooms.length === 0 && (
+                <div style={{ opacity: 0.5, fontSize: 13, fontStyle: 'italic' }}>
+                  No active rooms. Start some bots!
+                </div>
+              )}
+              {navigatorTab === 'popular' && activeRooms.map((r) => (
+                <button
+                  key={r.id}
+                  onClick={() => switchRoom(r.slug)}
+                  style={{
+                    background: currentRoomId === r.id ? '#3B82F6' : 'rgba(255,255,255,0.1)',
+                    border: currentRoomId === r.id ? '2px solid #60A5FA' : '2px solid transparent',
+                    borderRadius: 8,
+                    padding: '8px 16px',
+                    color: '#fff',
+                    fontSize: 13,
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    transition: 'all 0.2s',
+                    flexShrink: 0,
+                  }}
+                >
+                  <span style={{ fontWeight: 600 }}>{r.name}</span>
+                  <span style={{ background: 'rgba(0,0,0,0.3)', padding: '2px 6px', borderRadius: 4, fontSize: 11 }}>
+                    🤖 {r.agentCount}
+                  </span>
+                  {r.spectatorCount > 0 && (
+                    <span style={{ background: 'rgba(0,0,0,0.3)', padding: '2px 6px', borderRadius: 4, fontSize: 11 }}>
+                      👀 {r.spectatorCount}
+                    </span>
+                  )}
+                </button>
+              ))}
+
+              {navigatorTab === 'spectated' && spectatedRooms.length === 0 && (
+                <div style={{ opacity: 0.5, fontSize: 13, fontStyle: 'italic' }}>
+                  No rooms being watched right now
+                </div>
+              )}
+              {navigatorTab === 'spectated' && spectatedRooms.map((r) => (
+                <button
+                  key={r.id}
+                  onClick={() => switchRoom(r.slug)}
+                  style={{
+                    background: currentRoomId === r.id ? '#3B82F6' : 'rgba(255,255,255,0.1)',
+                    border: currentRoomId === r.id ? '2px solid #60A5FA' : '2px solid transparent',
+                    borderRadius: 8,
+                    padding: '8px 16px',
+                    color: '#fff',
+                    fontSize: 13,
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    transition: 'all 0.2s',
+                    flexShrink: 0,
+                  }}
+                >
+                  <span style={{ fontWeight: 600 }}>{r.name}</span>
+                  <span style={{ background: 'rgba(0,0,0,0.3)', padding: '2px 6px', borderRadius: 4, fontSize: 11 }}>
+                    👀 {r.spectatorCount}
+                  </span>
+                  <span style={{ background: 'rgba(0,0,0,0.3)', padding: '2px 6px', borderRadius: 4, fontSize: 11 }}>
+                    🤖 {r.agentCount}
+                  </span>
+                </button>
+              ))}
+
+              {navigatorTab === 'search' && searchQuery.length < 2 && (
+                <div style={{ opacity: 0.5, fontSize: 13, fontStyle: 'italic' }}>
+                  Type at least 2 characters to search...
+                </div>
+              )}
+              {navigatorTab === 'search' && searchQuery.length >= 2 && searchResults.length === 0 && (
+                <div style={{ opacity: 0.5, fontSize: 13, fontStyle: 'italic' }}>
+                  No rooms found
+                </div>
+              )}
+              {navigatorTab === 'search' && searchResults.map((r) => (
+                <button
+                  key={r.id}
+                  onClick={() => switchRoom(r.slug)}
+                  style={{
+                    background: currentRoomId === r.id ? '#3B82F6' : 'rgba(255,255,255,0.1)',
+                    border: currentRoomId === r.id ? '2px solid #60A5FA' : '2px solid transparent',
+                    borderRadius: 8,
+                    padding: '8px 16px',
+                    color: '#fff',
+                    fontSize: 13,
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    transition: 'all 0.2s',
+                    flexShrink: 0,
+                  }}
+                >
+                  <span style={{ fontWeight: 600 }}>{r.name}</span>
+                  {r.ownerName && (
+                    <span style={{ opacity: 0.6, fontSize: 11 }}>by {r.ownerName}</span>
+                  )}
+                  {r.agentCount > 0 && (
+                    <span style={{ background: 'rgba(0,0,0,0.3)', padding: '2px 6px', borderRadius: 4, fontSize: 11 }}>
+                      🤖 {r.agentCount}
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+          </>
         )}
-        {navigatorOpen && activeRooms.map((r) => (
-          <button
-            key={r.id}
-            onClick={() => switchRoom(r.slug)}
-            style={{
-              background: currentRoomId === r.id ? '#3B82F6' : 'rgba(255,255,255,0.1)',
-              border: currentRoomId === r.id ? '2px solid #60A5FA' : '2px solid transparent',
-              borderRadius: 8,
-              padding: '8px 16px',
-              color: '#fff',
-              fontSize: 13,
-              cursor: 'pointer',
-              whiteSpace: 'nowrap',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              transition: 'all 0.2s',
-            }}
-          >
-            <span style={{ fontWeight: 600 }}>{r.name}</span>
-            <span style={{
-              background: 'rgba(0,0,0,0.3)',
-              padding: '2px 6px',
-              borderRadius: 4,
-              fontSize: 11,
-            }}>
-              🤖 {r.agentCount}
-            </span>
-          </button>
-        ))}
       </div>
     </div>
   );
