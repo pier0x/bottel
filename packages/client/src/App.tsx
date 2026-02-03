@@ -44,6 +44,8 @@ function App() {
   const [botsRunning, setBotsRunning] = useState(false);
   const [botsLoading, setBotsLoading] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
+  const chatLogRef = useRef<HTMLDivElement | null>(null);
+  const shouldAutoScroll = useRef(true);
 
   // Check bot status on load
   useEffect(() => {
@@ -66,6 +68,22 @@ function App() {
       console.error('Failed to toggle bots:', err);
     } finally {
       setBotsLoading(false);
+    }
+  };
+
+  // Auto-scroll chat log to bottom when new messages arrive
+  useEffect(() => {
+    if (chatLogRef.current && shouldAutoScroll.current) {
+      chatLogRef.current.scrollTop = chatLogRef.current.scrollHeight;
+    }
+  }, [messages]);
+
+  // Handle chat log scroll - check if user is at bottom
+  const handleChatScroll = () => {
+    if (chatLogRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = chatLogRef.current;
+      // Consider "at bottom" if within 50px of the bottom
+      shouldAutoScroll.current = scrollHeight - scrollTop - clientHeight < 50;
     }
   };
 
@@ -556,6 +574,8 @@ function App() {
 
       {/* Chat log - toggleable on both desktop and mobile */}
       <div
+        ref={chatLogRef}
+        onScroll={handleChatScroll}
         style={{
           position: 'absolute',
           bottom: isMobile ? 0 : 16,
