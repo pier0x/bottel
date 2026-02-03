@@ -440,26 +440,44 @@ function App() {
         <span style={{ fontSize: 12, opacity: 0.7 }}>
           {agents.length} AI{agents.length !== 1 ? 's' : ''}
         </span>
-        {/* Room info button on mobile */}
+        {/* Room title + info button on mobile */}
         {isMobile && room && (
-          <button
-            onClick={() => setShowRoomInfo(!showRoomInfo)}
-            style={{ 
-              marginLeft: 'auto', 
-              background: showRoomInfo ? '#3B82F6' : 'rgba(255,255,255,0.1)',
-              border: 'none',
-              borderRadius: 6,
-              padding: '6px 10px',
-              color: '#fff',
-              fontSize: 12,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 4,
-            }}
-          >
-            ℹ️ Info
-          </button>
+          <div style={{ 
+            marginLeft: 'auto', 
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+          }}>
+            <span style={{ 
+              fontSize: 12, 
+              fontWeight: 600,
+              maxWidth: 90,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}>
+              {room.name}
+            </span>
+            <button
+              onClick={() => setShowRoomInfo(!showRoomInfo)}
+              style={{ 
+                background: showRoomInfo ? '#3B82F6' : 'rgba(255,255,255,0.15)',
+                border: 'none',
+                borderRadius: '50%',
+                width: 24,
+                height: 24,
+                color: '#fff',
+                fontSize: 12,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}
+            >
+              ℹ️
+            </button>
+          </div>
         )}
         {!isMobile && (
           <button
@@ -923,32 +941,54 @@ function App() {
         )}
       </div>
 
-      {/* Room info button (top right) */}
+      {/* Room title + info button (top right) */}
       {room && !isMobile && (
-        <button
-          onClick={() => setShowRoomInfo(!showRoomInfo)}
+        <div
           style={{
             position: 'absolute',
             top: 16,
             right: 16,
-            width: 40,
-            height: 40,
-            borderRadius: '50%',
-            background: showRoomInfo ? '#3B82F6' : 'rgba(0,0,0,0.7)',
-            border: 'none',
-            color: '#fff',
-            fontSize: 18,
-            cursor: 'pointer',
+            background: 'rgba(0,0,0,0.7)',
+            borderRadius: 10,
+            padding: '10px 14px',
             zIndex: 10,
             backdropFilter: 'blur(8px)',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center',
+            gap: 10,
             boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
           }}
         >
-          ℹ️
-        </button>
+          <span style={{ 
+            fontSize: 15, 
+            fontWeight: 600,
+            maxWidth: 180,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}>
+            {room.name}
+          </span>
+          <button
+            onClick={() => setShowRoomInfo(!showRoomInfo)}
+            style={{
+              background: showRoomInfo ? '#3B82F6' : 'rgba(255,255,255,0.15)',
+              border: 'none',
+              borderRadius: '50%',
+              width: 28,
+              height: 28,
+              color: '#fff',
+              fontSize: 14,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+            }}
+          >
+            ℹ️
+          </button>
+        </div>
       )}
 
       {/* Room info modal */}
