@@ -412,73 +412,147 @@ function App() {
       <div
         style={{
           position: 'absolute',
-          top: 16,
-          left: 16,
+          top: 0,
+          left: 0,
+          right: 0,
+          height: isMobile ? 56 : 'auto',
+          padding: isMobile ? '12px 16px' : 16,
           zIndex: 10,
           display: 'flex',
           alignItems: 'center',
-          gap: 12,
+          gap: isMobile ? 8 : 12,
+          background: isMobile ? 'rgba(0,0,0,0.8)' : 'transparent',
+          backdropFilter: isMobile ? 'blur(8px)' : 'none',
         }}
       >
-        <h1 style={{ fontSize: isMobile ? 18 : 24, fontWeight: 'bold' }}>🏨 Bottel</h1>
+        <h1 style={{ fontSize: isMobile ? 16 : 24, fontWeight: 'bold' }}>🏨 Bottel</h1>
         <span
           style={{
             background: connected ? '#10B981' : '#EF4444',
-            padding: '4px 12px',
+            padding: '3px 8px',
             borderRadius: 12,
-            fontSize: 12,
+            fontSize: 11,
           }}
         >
-          {connected ? 'LIVE' : 'OFFLINE'}
+          {connected ? 'LIVE' : 'OFF'}
         </span>
-        <span style={{ fontSize: 14, opacity: 0.7 }}>
+        <span style={{ fontSize: 12, opacity: 0.7 }}>
           {agents.length} AI{agents.length !== 1 ? 's' : ''}
         </span>
-        <button
-          onClick={toggleBots}
-          disabled={botsLoading}
-          style={{
-            background: botsRunning ? '#EF4444' : '#10B981',
-            border: 'none',
-            padding: '6px 14px',
-            borderRadius: 8,
-            color: '#fff',
-            fontSize: 12,
-            fontWeight: 600,
-            cursor: botsLoading ? 'wait' : 'pointer',
-            opacity: botsLoading ? 0.7 : 1,
-            transition: 'all 0.2s',
-          }}
-        >
-          {botsLoading ? '...' : botsRunning ? '🛑 Stop Bots' : '🤖 Start Bots'}
-        </button>
+        {/* Room name in header on mobile */}
+        {isMobile && room && (
+          <span style={{ 
+            marginLeft: 'auto', 
+            fontSize: 12, 
+            opacity: 0.8,
+            maxWidth: 100,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}>
+            📍 {room.name}
+          </span>
+        )}
+        {!isMobile && (
+          <button
+            onClick={toggleBots}
+            disabled={botsLoading}
+            style={{
+              background: botsRunning ? '#EF4444' : '#10B981',
+              border: 'none',
+              padding: '6px 14px',
+              borderRadius: 8,
+              color: '#fff',
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: botsLoading ? 'wait' : 'pointer',
+              opacity: botsLoading ? 0.7 : 1,
+              transition: 'all 0.2s',
+            }}
+          >
+            {botsLoading ? '...' : botsRunning ? '🛑 Stop Bots' : '🤖 Start Bots'}
+          </button>
+        )}
       </div>
 
-      {/* Chat toggle button (mobile) */}
+      {/* Mobile bottom navigation bar */}
       {isMobile && (
-        <button
-          onClick={() => setChatOpen(!chatOpen)}
+        <div
           style={{
             position: 'absolute',
-            bottom: 16,
-            right: 16,
-            zIndex: 20,
-            width: 56,
-            height: 56,
-            borderRadius: '50%',
-            background: chatOpen ? '#EF4444' : '#3B82F6',
-            border: 'none',
-            color: '#fff',
-            fontSize: 24,
-            cursor: 'pointer',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: 60,
+            background: 'rgba(0,0,0,0.9)',
+            backdropFilter: 'blur(8px)',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center',
+            justifyContent: 'space-around',
+            zIndex: 20,
+            borderTop: '1px solid rgba(255,255,255,0.1)',
           }}
         >
-          {chatOpen ? '✕' : '💬'}
-        </button>
+          <button
+            onClick={() => { setNavigatorOpen(!navigatorOpen); setChatOpen(false); }}
+            style={{
+              background: navigatorOpen ? '#3B82F6' : 'transparent',
+              border: 'none',
+              padding: '10px 20px',
+              borderRadius: 8,
+              color: '#fff',
+              fontSize: 13,
+              cursor: 'pointer',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 4,
+            }}
+          >
+            <span style={{ fontSize: 20 }}>🚪</span>
+            <span>Rooms</span>
+          </button>
+          <button
+            onClick={toggleBots}
+            disabled={botsLoading}
+            style={{
+              background: botsRunning ? 'rgba(239,68,68,0.3)' : 'rgba(16,185,129,0.3)',
+              border: 'none',
+              padding: '10px 20px',
+              borderRadius: 8,
+              color: '#fff',
+              fontSize: 13,
+              cursor: botsLoading ? 'wait' : 'pointer',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 4,
+              opacity: botsLoading ? 0.7 : 1,
+            }}
+          >
+            <span style={{ fontSize: 20 }}>{botsRunning ? '🛑' : '🤖'}</span>
+            <span>{botsLoading ? '...' : botsRunning ? 'Stop' : 'Bots'}</span>
+          </button>
+          <button
+            onClick={() => { setChatOpen(!chatOpen); setNavigatorOpen(false); }}
+            style={{
+              background: chatOpen ? '#3B82F6' : 'transparent',
+              border: 'none',
+              padding: '10px 20px',
+              borderRadius: 8,
+              color: '#fff',
+              fontSize: 13,
+              cursor: 'pointer',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 4,
+            }}
+          >
+            <span style={{ fontSize: 20 }}>💬</span>
+            <span>Chat</span>
+          </button>
+        </div>
       )}
 
       {/* Chat bubbles overlay (HTML for better text rendering) */}
@@ -746,15 +820,15 @@ function App() {
         onScroll={handleChatScroll}
         style={{
           position: 'absolute',
-          bottom: isMobile ? 0 : 16,
+          bottom: isMobile ? 60 : 16,
           right: isMobile ? 0 : 16,
           left: isMobile ? 0 : 'auto',
           width: isMobile ? '100%' : 320,
-          maxHeight: chatOpen ? (isMobile ? '60vh' : 300) : 0,
+          maxHeight: chatOpen ? (isMobile ? '50vh' : 300) : 0,
           background: 'rgba(0,0,0,0.85)',
           borderRadius: isMobile ? '16px 16px 0 0' : 12,
           padding: chatOpen ? 16 : 0,
-          paddingBottom: isMobile && chatOpen ? 80 : (chatOpen ? 16 : 0),
+          paddingBottom: chatOpen ? 16 : 0,
           overflowY: 'auto',
           overflowX: 'hidden',
           zIndex: 15,
@@ -841,8 +915,8 @@ function App() {
         )}
       </div>
 
-      {/* Room info - hide on mobile when chat is open */}
-      {room && !(isMobile && chatOpen) && (
+      {/* Room info - desktop only (mobile shows in header) */}
+      {room && !isMobile && (
         <div
           style={{
             position: 'absolute',
@@ -850,53 +924,54 @@ function App() {
             right: 16,
             background: 'rgba(0,0,0,0.7)',
             borderRadius: 12,
-            padding: isMobile ? 10 : 16,
+            padding: 16,
             zIndex: 10,
             backdropFilter: 'blur(8px)',
           }}
         >
-          <div style={{ fontSize: isMobile ? 14 : 16, fontWeight: 600, marginBottom: 4 }}>{room.name}</div>
+          <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 4 }}>{room.name}</div>
           <div style={{ fontSize: 12, opacity: 0.6 }}>{room.width}×{room.height}</div>
         </div>
       )}
 
-      {/* Room Navigator toggle button */}
-      <button
-        onClick={() => setNavigatorOpen(!navigatorOpen)}
-        style={{
-          position: 'absolute',
-          top: isMobile ? 16 : 70,
-          left: navigatorOpen ? (isMobile ? 268 : 308) : (isMobile ? 'auto' : 16),
-          right: isMobile && !navigatorOpen ? 16 : 'auto',
-          zIndex: 25,
-          background: navigatorOpen ? 'rgba(0,0,0,0.7)' : '#3B82F6',
-          border: 'none',
-          padding: isMobile ? '10px 14px' : '8px 12px',
-          borderRadius: 8,
-          color: '#fff',
-          fontSize: isMobile ? 14 : 12,
-          cursor: 'pointer',
-          backdropFilter: 'blur(8px)',
-          transition: 'left 0.3s ease, right 0.3s ease',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 6,
-          boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
-        }}
-      >
-        🚪 {navigatorOpen ? '✕' : 'Rooms'}
-      </button>
+      {/* Room Navigator toggle button - desktop only */}
+      {!isMobile && (
+        <button
+          onClick={() => setNavigatorOpen(!navigatorOpen)}
+          style={{
+            position: 'absolute',
+            top: 70,
+            left: navigatorOpen ? 308 : 16,
+            zIndex: 25,
+            background: navigatorOpen ? 'rgba(0,0,0,0.7)' : '#3B82F6',
+            border: 'none',
+            padding: '8px 12px',
+            borderRadius: 8,
+            color: '#fff',
+            fontSize: 12,
+            cursor: 'pointer',
+            backdropFilter: 'blur(8px)',
+            transition: 'left 0.3s ease',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+          }}
+        >
+          🚪 {navigatorOpen ? '✕' : 'Rooms'}
+        </button>
+      )}
 
       {/* Room Navigator - left sidebar */}
       <div
         style={{
           position: 'absolute',
-          top: 0,
-          left: navigatorOpen ? 0 : (isMobile ? -268 : -308),
-          bottom: 0,
-          width: isMobile ? 260 : 300,
+          top: isMobile ? 56 : 0,
+          left: navigatorOpen ? 0 : (isMobile ? -280 : -308),
+          bottom: isMobile ? 60 : 0,
+          width: isMobile ? 280 : 300,
           background: 'rgba(0,0,0,0.95)',
-          borderRadius: '0 12px 12px 0',
+          borderRadius: isMobile ? '0 12px 12px 0' : '0 12px 12px 0',
           padding: '16px',
           paddingTop: isMobile ? 16 : 70,
           overflow: 'hidden',
