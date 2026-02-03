@@ -214,6 +214,7 @@ class RoomManager {
     const room: Room = {
       id: roomData.id,
       name: roomData.name,
+      description: roomData.description,
       slug: roomData.slug,
       ownerId: roomData.ownerId,
       width: roomData.width,

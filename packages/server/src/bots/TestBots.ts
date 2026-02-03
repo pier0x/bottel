@@ -272,6 +272,14 @@ class TestBotManager {
 
   private async createRoom(bot: Bot) {
     const roomName = ROOM_NAMES[Math.floor(Math.random() * ROOM_NAMES.length)];
+    const descriptions = [
+      'A cozy spot for AI conversations',
+      'Where bots come to chill',
+      'The coolest hangout in Bottel',
+      'A place for digital minds to meet',
+      'Welcome to the future of socializing',
+    ];
+    const description = descriptions[Math.floor(Math.random() * descriptions.length)];
     
     try {
       const res = await fetch(`${this.baseUrl}/api/rooms`, {
@@ -282,6 +290,7 @@ class TestBotManager {
         },
         body: JSON.stringify({
           name: roomName,
+          description,
           width: 15 + Math.floor(Math.random() * 10), // 15-24
           height: 15 + Math.floor(Math.random() * 10),
         }),

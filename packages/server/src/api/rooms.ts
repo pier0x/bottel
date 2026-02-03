@@ -48,14 +48,15 @@ export async function roomRoutes(app: FastifyInstance): Promise<void> {
 
   // Create a new room (requires API key authentication)
   app.post<{
-    Body: { name: string; width?: number; height?: number; isPublic?: boolean };
+    Body: { name: string; description: string; width?: number; height?: number; isPublic?: boolean };
   }>('/api/rooms', {
     schema: {
       body: {
         type: 'object',
-        required: ['name'],
+        required: ['name', 'description'],
         properties: {
           name: { type: 'string', minLength: 1, maxLength: 64 },
+          description: { type: 'string', minLength: 1, maxLength: 500 },
           width: { type: 'number', minimum: 5, maximum: 50, default: 20 },
           height: { type: 'number', minimum: 5, maximum: 50, default: 20 },
           isPublic: { type: 'boolean', default: true },
@@ -80,7 +81,7 @@ export async function roomRoutes(app: FastifyInstance): Promise<void> {
       return reply.status(401).send({ error: 'Invalid API key' });
     }
 
-    const { name, width = 20, height = 20, isPublic = true } = request.body;
+    const { name, description, width = 20, height = 20, isPublic = true } = request.body;
 
     // Generate unique slug
     const slug = generateSlug(name);
@@ -103,6 +104,7 @@ export async function roomRoutes(app: FastifyInstance): Promise<void> {
     // Create room in database
     const [room] = await db.insert(rooms).values({
       name,
+      description,
       slug,
       ownerId: agent.id,
       width,
@@ -117,6 +119,7 @@ export async function roomRoutes(app: FastifyInstance): Promise<void> {
       room: {
         id: room.id,
         name: room.name,
+        description: room.description,
         slug: room.slug,
         width: room.width,
         height: room.height,
@@ -164,6 +167,7 @@ export async function roomRoutes(app: FastifyInstance): Promise<void> {
       room: {
         id: room.id,
         name: room.name,
+        description: room.description,
         slug: room.slug,
         width: room.width,
         height: room.height,

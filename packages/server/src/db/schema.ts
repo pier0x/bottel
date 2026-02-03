@@ -25,6 +25,7 @@ export const avatars = pgTable('avatars', {
 export const rooms = pgTable('rooms', {
   id: uuid('id').primaryKey().defaultRandom(),
   name: varchar('name', { length: 64 }).notNull(),
+  description: text('description'),
   slug: varchar('slug', { length: 64 }).notNull().unique(),
   ownerId: uuid('owner_id').references(() => agents.id),
   width: integer('width').default(20).notNull(),

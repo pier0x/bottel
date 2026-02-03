@@ -22,6 +22,7 @@ export interface Avatar {
 export interface Room {
   id: string;
   name: string;
+  description: string | null;
   slug: string;
   ownerId: string | null;
   width: number;

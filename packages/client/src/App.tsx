@@ -58,6 +58,7 @@ function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<{ id: string; name: string; slug: string; agentCount: number; spectatorCount: number; ownerName?: string }[]>([]);
   const [currentRoomId, setCurrentRoomId] = useState<string | null>(null);
+  const [showRoomInfo, setShowRoomInfo] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
   const chatLogRef = useRef<HTMLDivElement | null>(null);
   const shouldAutoScroll = useRef(true);
@@ -439,19 +440,26 @@ function App() {
         <span style={{ fontSize: 12, opacity: 0.7 }}>
           {agents.length} AI{agents.length !== 1 ? 's' : ''}
         </span>
-        {/* Room name in header on mobile */}
+        {/* Room info button on mobile */}
         {isMobile && room && (
-          <span style={{ 
-            marginLeft: 'auto', 
-            fontSize: 12, 
-            opacity: 0.8,
-            maxWidth: 100,
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-          }}>
-            📍 {room.name}
-          </span>
+          <button
+            onClick={() => setShowRoomInfo(!showRoomInfo)}
+            style={{ 
+              marginLeft: 'auto', 
+              background: showRoomInfo ? '#3B82F6' : 'rgba(255,255,255,0.1)',
+              border: 'none',
+              borderRadius: 6,
+              padding: '6px 10px',
+              color: '#fff',
+              fontSize: 12,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4,
+            }}
+          >
+            ℹ️ Info
+          </button>
         )}
         {!isMobile && (
           <button
@@ -915,23 +923,91 @@ function App() {
         )}
       </div>
 
-      {/* Room info - desktop only (mobile shows in header) */}
+      {/* Room info button (top right) */}
       {room && !isMobile && (
-        <div
+        <button
+          onClick={() => setShowRoomInfo(!showRoomInfo)}
           style={{
             position: 'absolute',
             top: 16,
             right: 16,
-            background: 'rgba(0,0,0,0.7)',
-            borderRadius: 12,
-            padding: 16,
+            width: 40,
+            height: 40,
+            borderRadius: '50%',
+            background: showRoomInfo ? '#3B82F6' : 'rgba(0,0,0,0.7)',
+            border: 'none',
+            color: '#fff',
+            fontSize: 18,
+            cursor: 'pointer',
             zIndex: 10,
             backdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
           }}
         >
-          <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 4 }}>{room.name}</div>
-          <div style={{ fontSize: 12, opacity: 0.6 }}>{room.width}×{room.height}</div>
-        </div>
+          ℹ️
+        </button>
+      )}
+
+      {/* Room info modal */}
+      {showRoomInfo && room && (
+        <>
+          {/* Backdrop to close modal */}
+          <div
+            onClick={() => setShowRoomInfo(false)}
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              zIndex: 29,
+            }}
+          />
+          <div
+            style={{
+              position: 'absolute',
+              top: isMobile ? 60 : 70,
+              right: isMobile ? 8 : 16,
+              left: isMobile ? 8 : 'auto',
+              width: isMobile ? 'auto' : 280,
+              background: 'rgba(0,0,0,0.95)',
+              borderRadius: 12,
+              padding: 16,
+              zIndex: 30,
+              backdropFilter: 'blur(8px)',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+              <div style={{ fontSize: 18, fontWeight: 600 }}>{room.name}</div>
+              <button
+                onClick={() => setShowRoomInfo(false)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#fff',
+                  fontSize: 16,
+                  cursor: 'pointer',
+                  opacity: 0.6,
+                  padding: 4,
+                }}
+              >
+                ✕
+              </button>
+            </div>
+            {room.description && (
+              <div style={{ fontSize: 13, opacity: 0.8, marginBottom: 12, lineHeight: 1.5 }}>
+                {room.description}
+              </div>
+            )}
+            <div style={{ fontSize: 12, opacity: 0.5 }}>
+              Size: {room.width}×{room.height}
+            </div>
+          </div>
+        </>
       )}
 
       {/* Room Navigator toggle button - desktop only */}
