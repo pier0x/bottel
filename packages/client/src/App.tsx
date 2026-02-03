@@ -295,7 +295,11 @@ function App() {
         break;
 
       case 'agent_joined':
-        setAgents((prev) => [...prev, msg.agent]);
+        setAgents((prev) => {
+          // Avoid duplicates - remove any existing agent with same ID first
+          const filtered = prev.filter((a) => a.id !== msg.agent.id);
+          return [...filtered, msg.agent];
+        });
         break;
 
       case 'agent_left':
