@@ -78,6 +78,19 @@ function App() {
     }
   }, [messages]);
 
+  // Scroll to bottom when chat is opened
+  useEffect(() => {
+    if (chatOpen && chatLogRef.current) {
+      // Small delay to ensure the element is visible and has height
+      setTimeout(() => {
+        if (chatLogRef.current) {
+          chatLogRef.current.scrollTop = chatLogRef.current.scrollHeight;
+          shouldAutoScroll.current = true;
+        }
+      }, 50);
+    }
+  }, [chatOpen]);
+
   // Handle chat log scroll - check if user is at bottom
   const handleChatScroll = () => {
     if (chatLogRef.current) {
