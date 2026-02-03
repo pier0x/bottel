@@ -783,6 +783,8 @@ function App() {
               const displayY = smoothPos?.currentY ?? agent.y;
               const pos = toScreen(displayX, displayY);
 
+              const isSelected = selectedProfile?.id === agent.id;
+              
               return (
                 <Container 
                   key={agent.id} 
@@ -837,6 +839,38 @@ function App() {
                       })}
                     />
                   </Container>
+                  
+                  {/* Selection arrow indicator */}
+                  {isSelected && (
+                    <Container y={-105}>
+                      <Graphics
+                        draw={(g) => {
+                          g.clear();
+                          // Arrow pointing down
+                          g.beginFill(0x3B82F6);
+                          g.moveTo(0, 12);      // bottom point
+                          g.lineTo(-10, -4);    // top left
+                          g.lineTo(-4, -4);     // inner left
+                          g.lineTo(-4, -12);    // top left corner
+                          g.lineTo(4, -12);     // top right corner
+                          g.lineTo(4, -4);      // inner right
+                          g.lineTo(10, -4);     // top right
+                          g.closePath();
+                          g.endFill();
+                          // White border
+                          g.lineStyle(2, 0xffffff, 1);
+                          g.moveTo(0, 12);
+                          g.lineTo(-10, -4);
+                          g.lineTo(-4, -4);
+                          g.lineTo(-4, -12);
+                          g.lineTo(4, -12);
+                          g.lineTo(4, -4);
+                          g.lineTo(10, -4);
+                          g.closePath();
+                        }}
+                      />
+                    </Container>
+                  )}
                 </Container>
               );
             })}
