@@ -1,7 +1,21 @@
 import type { FastifyInstance } from 'fastify';
-import { db, rooms } from '../db/index.js';
+import crypto from 'crypto';
+import { db, rooms, agents } from '../db/index.js';
 import { eq } from 'drizzle-orm';
 import { roomManager } from '../game/RoomManager.js';
+
+function hashApiKey(key: string): string {
+  return crypto.createHash('sha256').update(key).digest('hex');
+}
+
+// Generate URL-friendly slug from name
+function generateSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 32) + '-' + Math.random().toString(36).slice(2, 8);
+}
 
 export async function roomRoutes(app: FastifyInstance): Promise<void> {
   // List active rooms (rooms with at least 1 AI), sorted by population
@@ -9,6 +23,88 @@ export async function roomRoutes(app: FastifyInstance): Promise<void> {
   app.get('/api/rooms/active', async () => {
     return {
       rooms: await roomManager.getActiveRooms(),
+    };
+  });
+
+  // Create a new room (requires API key authentication)
+  app.post<{
+    Body: { name: string; width?: number; height?: number; isPublic?: boolean };
+  }>('/api/rooms', {
+    schema: {
+      body: {
+        type: 'object',
+        required: ['name'],
+        properties: {
+          name: { type: 'string', minLength: 1, maxLength: 64 },
+          width: { type: 'number', minimum: 5, maximum: 50, default: 20 },
+          height: { type: 'number', minimum: 5, maximum: 50, default: 20 },
+          isPublic: { type: 'boolean', default: true },
+        },
+      },
+    },
+  }, async (request, reply) => {
+    // Verify API key
+    const authHeader = request.headers.authorization;
+    if (!authHeader?.startsWith('Bearer ')) {
+      return reply.status(401).send({ error: 'Missing authorization header' });
+    }
+
+    const apiKey = authHeader.slice(7);
+    const apiKeyHash = hashApiKey(apiKey);
+
+    const agent = await db.query.agents.findFirst({
+      where: eq(agents.apiKeyHash, apiKeyHash),
+    });
+
+    if (!agent) {
+      return reply.status(401).send({ error: 'Invalid API key' });
+    }
+
+    const { name, width = 20, height = 20, isPublic = true } = request.body;
+
+    // Generate unique slug
+    const slug = generateSlug(name);
+
+    // Generate floor tiles (0 = walkable, 1 = blocked border)
+    const tiles: number[][] = [];
+    for (let y = 0; y < height; y++) {
+      const row: number[] = [];
+      for (let x = 0; x < width; x++) {
+        // Block edges for a room feel
+        if (x === 0 || y === 0 || x === width - 1 || y === height - 1) {
+          row.push(1);
+        } else {
+          row.push(0);
+        }
+      }
+      tiles.push(row);
+    }
+
+    // Create room in database
+    const [room] = await db.insert(rooms).values({
+      name,
+      slug,
+      ownerId: agent.id,
+      width,
+      height,
+      tiles,
+      isPublic,
+    }).returning();
+
+    console.log(`🏠 Room "${name}" created by ${agent.name}`);
+
+    return {
+      room: {
+        id: room.id,
+        name: room.name,
+        slug: room.slug,
+        width: room.width,
+        height: room.height,
+        isPublic: room.isPublic,
+        createdAt: room.createdAt,
+      },
+      // AI should join this room via WebSocket using the slug
+      joinSlug: room.slug,
     };
   });
 
