@@ -9,6 +9,7 @@
     "start": "node dist/index.js",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
+    "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
@@ -29,7 +30,7 @@
     "@types/node": "^20.10.6",
     "@types/pg": "^8.10.9",
     "@types/ws": "^8.18.1",
-    "drizzle-kit": "^0.20.12",
+    "drizzle-kit": "^0.31.8",
     "tsx": "^4.7.0",
     "typescript": "^5.3.3"
   }
