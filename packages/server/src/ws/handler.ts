@@ -181,8 +181,15 @@ async function handleSpectatorJoin(ws: WebSocket, roomId: string): Promise<void>
     return;
   }
 
-  // Register as spectator
-  const spectatorId = `spectator-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  // Remove from previous room if switching
+  const existingSpec = spectators.get(ws);
+  if (existingSpec && existingSpec.roomId && existingSpec.roomId !== room.room.id) {
+    roomManager.removeSpectator(existingSpec.roomId, ws);
+    console.log(`Spectator left room ${existingSpec.roomId}`);
+  }
+
+  // Register as spectator (reuse existing spectatorId if present)
+  const spectatorId = existingSpec?.spectatorId || `spectator-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   spectators.set(ws, { spectatorId, roomId: room.room.id });
   roomManager.addSpectator(room.room.id, ws);
 
