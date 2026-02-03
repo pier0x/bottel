@@ -31,6 +31,8 @@ interface Bot {
   apiKey: string;
   position: { x: number; y: number };
   currentRoom: string;
+  roomWidth: number;
+  roomHeight: number;
   isMovingRooms: boolean;
 }
 
@@ -222,6 +224,8 @@ class TestBotManager {
             apiKey,
             position, 
             currentRoom: msg.room?.slug || 'lobby',
+            roomWidth: msg.room?.width || 20,
+            roomHeight: msg.room?.height || 20,
             isMovingRooms: false,
           });
         } else if (msg.type === 'error') {
@@ -244,8 +248,11 @@ class TestBotManager {
     const dx = Math.round(Math.cos(angle) * distance);
     const dy = Math.round(Math.sin(angle) * distance);
     
-    const newX = Math.max(1, Math.min(18, bot.position.x + dx));
-    const newY = Math.max(1, Math.min(18, bot.position.y + dy));
+    // Respect room bounds: walkable area is (1,1) to (width-2, height-2)
+    const maxX = bot.roomWidth - 2;
+    const maxY = bot.roomHeight - 2;
+    const newX = Math.max(1, Math.min(maxX, bot.position.x + dx));
+    const newY = Math.max(1, Math.min(maxY, bot.position.y + dy));
     
     // Update local position (server will handle actual pathfinding)
     bot.position.x = newX;
@@ -343,8 +350,10 @@ class TestBotManager {
             bot.position = { x: me.x, y: me.y };
           }
           bot.currentRoom = msg.room?.slug || roomSlug;
+          bot.roomWidth = msg.room?.width || 20;
+          bot.roomHeight = msg.room?.height || 20;
           bot.isMovingRooms = false;
-          console.log(`[${bot.name}] ✅ Joined "${msg.room?.name || roomSlug}"`);
+          console.log(`[${bot.name}] ✅ Joined "${msg.room?.name || roomSlug}" (${bot.roomWidth}x${bot.roomHeight})`);
         }
       });
 

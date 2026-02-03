@@ -278,21 +278,22 @@ class RoomManager {
   }
 
   private findSpawnPoint(room: Room): { x: number; y: number } {
-    const walkable: { x: number; y: number }[] = [];
+    // Always spawn at (1,1) - the first walkable tile inside the room border
+    // If (1,1) is not walkable, find the first available walkable tile
+    if (room.tiles[1]?.[1] === 0) {
+      return { x: 1, y: 1 };
+    }
     
+    // Fallback: find first walkable tile
     for (let y = 0; y < room.height; y++) {
       for (let x = 0; x < room.width; x++) {
         if (room.tiles[y]?.[x] === 0) {
-          walkable.push({ x, y });
+          return { x, y };
         }
       }
     }
 
-    if (walkable.length === 0) {
-      return { x: 1, y: 1 }; // Fallback
-    }
-
-    return walkable[Math.floor(Math.random() * walkable.length)];
+    return { x: 1, y: 1 }; // Last resort fallback
   }
 
   async leaveCurrentRoom(agentId: string): Promise<string | null> {
