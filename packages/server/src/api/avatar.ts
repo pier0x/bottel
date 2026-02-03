@@ -21,6 +21,28 @@ async function getUserFromAuth(authHeader: string | undefined): Promise<{ id: st
 }
 
 export async function avatarRoutes(app: FastifyInstance): Promise<void> {
+  // Get public profile by user ID (for clicking on avatars)
+  app.get<{
+    Params: { userId: string };
+  }>('/api/users/:userId/profile', async (request, reply) => {
+    const { userId } = request.params;
+    
+    const user = await db.query.users.findFirst({
+      where: eq(users.id, userId),
+    });
+
+    if (!user) {
+      return reply.status(404).send({ error: 'User not found' });
+    }
+
+    return {
+      id: user.id,
+      username: user.username,
+      bodyColor: user.bodyColor,
+      createdAt: user.createdAt,
+    };
+  });
+
   // Get own avatar
   app.get('/api/avatar', async (request, reply) => {
     const user = await getUserFromAuth(request.headers.authorization);

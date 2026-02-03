@@ -59,6 +59,13 @@ function App() {
   const [searchResults, setSearchResults] = useState<{ id: string; name: string; slug: string; agentCount: number; spectatorCount: number; ownerName?: string }[]>([]);
   const [currentRoomId, setCurrentRoomId] = useState<string | null>(null);
   const [showRoomInfo, setShowRoomInfo] = useState(false);
+  const [selectedProfile, setSelectedProfile] = useState<{
+    id: string;
+    username: string;
+    bodyColor: string;
+    createdAt: string;
+  } | null>(null);
+  const [_profileLoading, setProfileLoading] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
   const chatLogRef = useRef<HTMLDivElement | null>(null);
   const shouldAutoScroll = useRef(true);
@@ -122,6 +129,22 @@ function App() {
     
     return () => clearTimeout(timeout);
   }, [searchQuery]);
+
+  // Fetch and show user profile
+  const showProfile = async (agentId: string) => {
+    setProfileLoading(true);
+    try {
+      const res = await fetch(`/api/users/${agentId}/profile`);
+      if (res.ok) {
+        const data = await res.json();
+        setSelectedProfile(data);
+      }
+    } catch (err) {
+      console.error('Failed to load profile:', err);
+    } finally {
+      setProfileLoading(false);
+    }
+  };
 
   // Switch room function
   const switchRoom = (roomId: string) => {
@@ -761,7 +784,14 @@ function App() {
               const pos = toScreen(displayX, displayY);
 
               return (
-                <Container key={agent.id} x={pos.x} y={pos.y - 15}>
+                <Container 
+                  key={agent.id} 
+                  x={pos.x} 
+                  y={pos.y - 15}
+                  eventMode="static"
+                  cursor="pointer"
+                  pointerdown={() => showProfile(agent.id)}
+                >
                   <Graphics
                     draw={(g) => {
                       g.clear();
@@ -1092,6 +1122,136 @@ function App() {
             <span style={{ fontSize: 24 }}>🚪</span>
             <span style={{ fontSize: 11, opacity: 0.8 }}>Rooms</span>
           </button>
+        </div>
+      )}
+
+      {/* Profile Panel - Bottom right like Habbo */}
+      {selectedProfile && (
+        <div
+          style={{
+            position: 'absolute',
+            bottom: isMobile ? 70 : 16,
+            right: isMobile ? 8 : 350,
+            width: isMobile ? 'calc(100% - 16px)' : 280,
+            background: 'rgba(0,0,0,0.95)',
+            borderRadius: 12,
+            padding: 16,
+            zIndex: 25,
+            backdropFilter: 'blur(8px)',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
+          }}
+        >
+          {/* Close button */}
+          <button
+            onClick={() => setSelectedProfile(null)}
+            style={{
+              position: 'absolute',
+              top: 8,
+              right: 8,
+              background: 'transparent',
+              border: 'none',
+              color: '#fff',
+              fontSize: 16,
+              cursor: 'pointer',
+              opacity: 0.6,
+              padding: 4,
+            }}
+          >
+            ✕
+          </button>
+
+          <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+            {/* Large avatar preview */}
+            <div
+              style={{
+                width: 80,
+                height: 100,
+                background: 'rgba(255,255,255,0.1)',
+                borderRadius: 8,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}
+            >
+              {/* Zoomed avatar */}
+              <div style={{ position: 'relative' }}>
+                {/* Shadow */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    bottom: -5,
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    width: 42,
+                    height: 14,
+                    background: 'rgba(0,0,0,0.3)',
+                    borderRadius: '50%',
+                  }}
+                />
+                {/* Body */}
+                <div
+                  style={{
+                    width: 42,
+                    height: 54,
+                    background: selectedProfile.bodyColor,
+                    borderRadius: '50%',
+                    position: 'relative',
+                    boxShadow: `inset 0 -8px 16px rgba(0,0,0,0.2)`,
+                  }}
+                />
+                {/* Head */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: -20,
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    width: 36,
+                    height: 36,
+                    background: '#fcd5b8',
+                    borderRadius: '50%',
+                    boxShadow: `inset 0 -4px 8px rgba(0,0,0,0.1)`,
+                  }}
+                >
+                  {/* Eyes */}
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: 14,
+                      left: 8,
+                      width: 6,
+                      height: 6,
+                      background: '#333',
+                      borderRadius: '50%',
+                    }}
+                  />
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: 14,
+                      right: 8,
+                      width: 6,
+                      height: 6,
+                      background: '#333',
+                      borderRadius: '50%',
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Profile info */}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 8 }}>
+                {selectedProfile.username}
+              </div>
+              <div style={{ fontSize: 12, opacity: 0.6, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span>📅</span>
+                Joined: {new Date(selectedProfile.createdAt).toLocaleDateString()}
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
