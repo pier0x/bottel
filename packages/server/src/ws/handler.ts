@@ -4,24 +4,21 @@ import jwt from 'jsonwebtoken';
 import { parseClientMessage, MAX_MESSAGE_LENGTH } from '@bottel/shared';
 import type { ServerMessage, ClientMessage } from '@bottel/shared';
 import { roomManager } from '../game/RoomManager.js';
-import { db, agents, avatars } from '../db/index.js';
+import { db, users } from '../db/index.js';
 import { eq } from 'drizzle-orm';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'bottel-dev-secret';
 
 interface TokenPayload {
-  agentId: string;
-  name: string;
+  userId: string;
+  username: string;
+  bodyColor: string;
 }
 
 interface AuthenticatedConnection {
-  agentId: string;
-  name: string;
-  avatar: {
-    id: string;
-    agentId: string;
-    bodyColor: string;
-  };
+  userId: string;
+  username: string;
+  bodyColor: string;
 }
 
 interface SpectatorConnection {
@@ -61,18 +58,17 @@ export async function handleConnection(ws: WebSocket, request: FastifyRequest): 
   ws.on('close', async () => {
     const conn = connections.get(ws);
     if (conn) {
-      const roomId = await roomManager.leaveCurrentRoom(conn.agentId);
+      const roomId = await roomManager.leaveCurrentRoom(conn.userId);
       if (roomId) {
         roomManager.broadcastToRoom(roomId, {
           type: 'agent_left',
-          agentId: conn.agentId,
+          agentId: conn.userId,
         });
       }
       connections.delete(ws);
-      console.log(`Agent ${conn.name} disconnected`);
+      console.log(`User ${conn.username} disconnected`);
     }
     
-    // Clean up spectator
     const spec = spectators.get(ws);
     if (spec && spec.roomId) {
       roomManager.removeSpectator(spec.roomId, ws);
@@ -100,10 +96,8 @@ async function handleMessage(ws: WebSocket, message: ClientMessage): Promise<voi
 
     case 'join':
       if (conn) {
-        // Authenticated agent joining
         await handleJoin(ws, conn, message.roomId);
       } else {
-        // Spectator joining (no auth required)
         await handleSpectatorJoin(ws, message.roomId);
       }
       break;
@@ -129,48 +123,33 @@ async function handleAuth(ws: WebSocket, token: string): Promise<void> {
   try {
     const payload = jwt.verify(token, JWT_SECRET) as TokenPayload;
     
-    // Get avatar
-    const avatar = await db.query.avatars.findFirst({
-      where: eq(avatars.agentId, payload.agentId),
-    });
-
-    if (!avatar) {
-      send(ws, { type: 'auth_error', error: 'Avatar not found' });
-      return;
-    }
-
     // Update last seen
-    await db.update(agents)
+    await db.update(users)
       .set({ lastSeenAt: new Date() })
-      .where(eq(agents.id, payload.agentId));
+      .where(eq(users.id, payload.userId));
 
     const conn: AuthenticatedConnection = {
-      agentId: payload.agentId,
-      name: payload.name,
-      avatar: {
-        id: avatar.id,
-        agentId: avatar.agentId,
-        bodyColor: avatar.bodyColor,
-      },
+      userId: payload.userId,
+      username: payload.username,
+      bodyColor: payload.bodyColor,
     };
 
     connections.set(ws, conn);
 
     send(ws, {
       type: 'auth_ok',
-      agentId: payload.agentId,
-      name: payload.name,
-      avatar: conn.avatar,
+      agentId: payload.userId,
+      name: payload.username,
+      avatar: { id: payload.userId, agentId: payload.userId, bodyColor: payload.bodyColor },
     });
 
-    console.log(`Agent ${payload.name} authenticated`);
+    console.log(`User ${payload.username} authenticated`);
   } catch (error) {
     send(ws, { type: 'auth_error', error: 'Invalid token' });
   }
 }
 
 async function handleSpectatorJoin(ws: WebSocket, roomId: string): Promise<void> {
-  // Load room by slug or ID
   let room = await roomManager.loadRoomBySlug(roomId);
   if (!room) {
     room = await roomManager.loadRoom(roomId);
@@ -181,23 +160,20 @@ async function handleSpectatorJoin(ws: WebSocket, roomId: string): Promise<void>
     return;
   }
 
-  // Remove from previous room if switching
   const existingSpec = spectators.get(ws);
   if (existingSpec && existingSpec.roomId && existingSpec.roomId !== room.room.id) {
     roomManager.removeSpectator(existingSpec.roomId, ws);
     console.log(`Spectator left room ${existingSpec.roomId}`);
   }
 
-  // Register as spectator (reuse existing spectatorId if present)
   const spectatorId = existingSpec?.spectatorId || `spectator-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   spectators.set(ws, { spectatorId, roomId: room.room.id });
   roomManager.addSpectator(room.room.id, ws);
 
-  // Send room state
   send(ws, {
     type: 'room_state',
     room: room.room,
-    agents: roomManager.getRoomAgents(room.room.id),
+    agents: roomManager.getRoomUsers(room.room.id),
     messages: room.messageHistory,
   });
 
@@ -205,7 +181,6 @@ async function handleSpectatorJoin(ws: WebSocket, roomId: string): Promise<void>
 }
 
 async function handleJoin(ws: WebSocket, conn: AuthenticatedConnection, roomId: string): Promise<void> {
-  // Try to load by slug first, then by ID
   let result = await roomManager.loadRoomBySlug(roomId);
   if (result) {
     roomId = result.room.id;
@@ -213,9 +188,9 @@ async function handleJoin(ws: WebSocket, conn: AuthenticatedConnection, roomId: 
 
   const joinResult = await roomManager.joinRoom(
     roomId,
-    conn.agentId,
-    conn.name,
-    conn.avatar,
+    conn.userId,
+    conn.username,
+    conn.bodyColor,
     ws
   );
 
@@ -226,73 +201,67 @@ async function handleJoin(ws: WebSocket, conn: AuthenticatedConnection, roomId: 
 
   const { room, spawnPoint } = joinResult;
 
-  // Send room state to joining agent
   send(ws, {
     type: 'room_state',
     room: room.room,
-    agents: roomManager.getRoomAgents(room.room.id),
+    agents: roomManager.getRoomUsers(room.room.id),
     messages: room.messageHistory,
   });
 
-  // Broadcast join to others
   roomManager.broadcastToRoom(room.room.id, {
     type: 'agent_joined',
     agent: {
-      id: conn.agentId,
-      name: conn.name,
-      avatar: conn.avatar,
+      id: conn.userId,
+      name: conn.username,
+      avatar: { id: conn.userId, agentId: conn.userId, bodyColor: conn.bodyColor },
       x: spawnPoint.x,
       y: spawnPoint.y,
     },
-  }, conn.agentId);
+  }, conn.userId);
 
-  console.log(`Agent ${conn.name} joined room ${room.room.name}`);
+  console.log(`User ${conn.username} joined room ${room.room.name}`);
 }
 
 async function handleLeave(ws: WebSocket, conn: AuthenticatedConnection): Promise<void> {
-  const roomId = await roomManager.leaveCurrentRoom(conn.agentId);
+  const roomId = await roomManager.leaveCurrentRoom(conn.userId);
   if (roomId) {
     roomManager.broadcastToRoom(roomId, {
       type: 'agent_left',
-      agentId: conn.agentId,
+      agentId: conn.userId,
     });
-    console.log(`Agent ${conn.name} left room`);
+    console.log(`User ${conn.username} left room`);
   }
 }
 
 function handleMove(ws: WebSocket, conn: AuthenticatedConnection, x: number, y: number): void {
-  const room = roomManager.getAgentRoom(conn.agentId);
+  const room = roomManager.getUserRoom(conn.userId);
   if (!room) {
     send(ws, { type: 'error', code: 'NOT_IN_ROOM', message: 'Join a room first' });
     return;
   }
 
-  const result = roomManager.moveAgent(conn.agentId, x, y);
+  const result = roomManager.moveUser(conn.userId, x, y);
   if (!result.success) {
     send(ws, { type: 'error', code: 'INVALID_MOVE', message: result.error || 'Cannot move there' });
     return;
   }
-
-  // Movement is now handled by RoomManager which broadcasts each step
 }
 
 async function handleChat(ws: WebSocket, conn: AuthenticatedConnection, content: string): Promise<void> {
-  const room = roomManager.getAgentRoom(conn.agentId);
+  const room = roomManager.getUserRoom(conn.userId);
   if (!room) {
     send(ws, { type: 'error', code: 'NOT_IN_ROOM', message: 'Join a room first' });
     return;
   }
 
-  // Validate content
   if (!content || content.length === 0) return;
   if (content.length > MAX_MESSAGE_LENGTH) {
     content = content.slice(0, MAX_MESSAGE_LENGTH);
   }
 
-  const message = await roomManager.addMessage(conn.agentId, content);
+  const message = await roomManager.addMessage(conn.userId, content);
   if (!message) return;
 
-  // Broadcast to all in room
   roomManager.broadcastToRoom(room.room.id, {
     type: 'chat_message',
     id: message.id,

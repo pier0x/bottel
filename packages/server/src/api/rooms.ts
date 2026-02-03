@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import crypto from 'crypto';
-import { db, rooms, agents } from '../db/index.js';
+import { db, rooms, users } from '../db/index.js';
 import { eq } from 'drizzle-orm';
 import { roomManager } from '../game/RoomManager.js';
 
@@ -73,11 +73,11 @@ export async function roomRoutes(app: FastifyInstance): Promise<void> {
     const apiKey = authHeader.slice(7);
     const apiKeyHash = hashApiKey(apiKey);
 
-    const agent = await db.query.agents.findFirst({
-      where: eq(agents.apiKeyHash, apiKeyHash),
+    const user = await db.query.users.findFirst({
+      where: eq(users.apiKeyHash, apiKeyHash),
     });
 
-    if (!agent) {
+    if (!user) {
       return reply.status(401).send({ error: 'Invalid API key' });
     }
 
@@ -106,14 +106,14 @@ export async function roomRoutes(app: FastifyInstance): Promise<void> {
       name,
       description,
       slug,
-      ownerId: agent.id,
+      ownerId: user.id,
       width,
       height,
       tiles,
       isPublic,
     }).returning();
 
-    console.log(`🏠 Room "${name}" created by ${agent.name}`);
+    console.log(`🏠 Room "${name}" created by ${user.username}`);
 
     return {
       room: {

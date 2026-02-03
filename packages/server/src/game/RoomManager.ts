@@ -1,18 +1,14 @@
 import type { RoomAgent, Room, ChatMessage } from '@bottel/shared';
 import type { WebSocket } from 'ws';
 import { MESSAGE_HISTORY_LIMIT } from '@bottel/shared';
-import { db, rooms, messages, avatars, agents } from '../db/index.js';
+import { db, rooms, messages, users } from '../db/index.js';
 import { eq, desc } from 'drizzle-orm';
 
-interface ConnectedAgent {
+interface ConnectedUser {
   ws: WebSocket;
-  agentId: string;
-  name: string;
-  avatar: {
-    id: string;
-    agentId: string;
-    bodyColor: string;
-  };
+  userId: string;
+  username: string;
+  bodyColor: string;
   x: number;
   y: number;
   isWalking: boolean;
@@ -30,7 +26,6 @@ function findPath(
   width: number,
   height: number
 ): { x: number; y: number }[] {
-  // If start equals end, no path needed
   if (startX === endX && startY === endY) return [];
   
   const openSet: { x: number; y: number; g: number; h: number; f: number; parent: any }[] = [];
@@ -39,27 +34,22 @@ function findPath(
   const heuristic = (x: number, y: number) => Math.abs(x - endX) + Math.abs(y - endY);
   
   openSet.push({
-    x: startX,
-    y: startY,
-    g: 0,
+    x: startX, y: startY, g: 0,
     h: heuristic(startX, startY),
     f: heuristic(startX, startY),
     parent: null,
   });
   
-  // 8 directions: cardinal + diagonal
   const directions = [
     { dx: 0, dy: -1 }, { dx: 1, dy: 0 }, { dx: 0, dy: 1 }, { dx: -1, dy: 0 },
     { dx: 1, dy: -1 }, { dx: 1, dy: 1 }, { dx: -1, dy: 1 }, { dx: -1, dy: -1 },
   ];
   
   while (openSet.length > 0) {
-    // Get node with lowest f
     openSet.sort((a, b) => a.f - b.f);
     const current = openSet.shift()!;
     
     if (current.x === endX && current.y === endY) {
-      // Reconstruct path
       const path: { x: number; y: number }[] = [];
       let node = current;
       while (node.parent) {
@@ -76,16 +66,10 @@ function findPath(
       const ny = current.y + dir.dy;
       const key = `${nx},${ny}`;
       
-      // Bounds check
       if (nx < 0 || ny < 0 || nx >= width || ny >= height) continue;
-      
-      // Walkability check
       if (tiles[ny]?.[nx] !== 0) continue;
-      
-      // Already visited
       if (closedSet.has(key)) continue;
       
-      // Diagonal movement: check if we can actually cut corner
       if (dir.dx !== 0 && dir.dy !== 0) {
         if (tiles[current.y]?.[nx] !== 0 || tiles[ny]?.[current.x] !== 0) continue;
       }
@@ -107,20 +91,19 @@ function findPath(
     }
   }
   
-  // No path found
   return [];
 }
 
 interface RoomInstance {
   room: Room;
-  agents: Map<string, ConnectedAgent>; // agentId -> ConnectedAgent
-  spectators: Set<WebSocket>; // spectator connections
+  users: Map<string, ConnectedUser>;
+  spectators: Set<WebSocket>;
   messageHistory: ChatMessage[];
 }
 
 class RoomManager {
-  private rooms: Map<string, RoomInstance> = new Map(); // roomId -> RoomInstance
-  private agentRooms: Map<string, string> = new Map(); // agentId -> roomId
+  private rooms: Map<string, RoomInstance> = new Map();
+  private userRooms: Map<string, string> = new Map();
 
   async ensureLobbyExists(): Promise<void> {
     const existing = await db.query.rooms.findFirst({
@@ -128,7 +111,6 @@ class RoomManager {
     });
 
     if (!existing) {
-      // Create default lobby
       const tiles = this.generateDefaultTiles(20, 20);
       await db.insert(rooms).values({
         name: 'The Lobby',
@@ -141,7 +123,6 @@ class RoomManager {
       });
       console.log('Created default lobby room');
     } else if (!existing.description) {
-      // Update lobby description if missing
       await db.update(rooms)
         .set({ description: 'The main gathering place for all AIs. Welcome to Bottel!' })
         .where(eq(rooms.slug, 'lobby'));
@@ -150,13 +131,10 @@ class RoomManager {
   }
 
   private generateDefaultTiles(width: number, height: number): number[][] {
-    // 0 = walkable, 1 = blocked
-    // Create a simple room with walkable interior
     const tiles: number[][] = [];
     for (let y = 0; y < height; y++) {
       const row: number[] = [];
       for (let x = 0; x < width; x++) {
-        // Block edges for a room feel
         if (x === 0 || y === 0 || x === width - 1 || y === height - 1) {
           row.push(1);
         } else {
@@ -173,45 +151,39 @@ class RoomManager {
       return this.rooms.get(roomId)!;
     }
 
-    // Load from database
     const roomData = await db.query.rooms.findFirst({
       where: eq(rooms.id, roomId),
     });
 
     if (!roomData) return null;
 
-    // Load recent messages
     const recentMessages = await db.query.messages.findMany({
       where: eq(messages.roomId, roomId),
       orderBy: [desc(messages.createdAt)],
       limit: MESSAGE_HISTORY_LIMIT,
     });
 
-    // Build message history (use stored name/avatar, fallback to lookup for old messages)
     const messageHistory: ChatMessage[] = [];
     for (const msg of recentMessages.reverse()) {
-      let agentName = msg.agentName || 'Unknown';
+      let username = msg.username || 'Unknown';
       let avatarConfig = msg.avatarConfig;
       
-      // Fallback for old messages without stored name/avatar
-      if (!msg.agentName && msg.agentId) {
-        const agent = await db.query.agents.findFirst({
-          where: eq(agents.id, msg.agentId),
+      // Fallback for old messages
+      if (!msg.username && msg.userId) {
+        const user = await db.query.users.findFirst({
+          where: eq(users.id, msg.userId),
         });
-        if (agent) agentName = agent.name;
-        
-        // Try to get avatar too
-        const avatar = await db.query.avatars.findFirst({
-          where: eq(avatars.agentId, msg.agentId),
-        });
-        if (avatar) avatarConfig = { bodyColor: avatar.bodyColor };
+        if (user) {
+          username = user.username;
+          avatarConfig = { bodyColor: user.bodyColor };
+        }
       }
       
       messageHistory.push({
         id: msg.id,
         roomId: msg.roomId,
-        agentId: msg.agentId || '',
-        agentName,
+        agentId: msg.userId || '',
+        agentName: username,
         avatarConfig: avatarConfig || undefined,
         content: msg.content,
         createdAt: msg.createdAt,
@@ -233,7 +205,7 @@ class RoomManager {
 
     const instance: RoomInstance = {
       room,
-      agents: new Map(),
+      users: new Map(),
       spectators: new Set(),
       messageHistory,
     };
@@ -246,32 +218,29 @@ class RoomManager {
     const roomData = await db.query.rooms.findFirst({
       where: eq(rooms.slug, slug),
     });
-
     if (!roomData) return null;
     return this.loadRoom(roomData.id);
   }
 
   async joinRoom(
     roomId: string,
-    agentId: string,
-    name: string,
-    avatar: ConnectedAgent['avatar'],
+    userId: string,
+    username: string,
+    bodyColor: string,
     ws: WebSocket
   ): Promise<{ room: RoomInstance; spawnPoint: { x: number; y: number } } | null> {
     const room = await this.loadRoom(roomId);
     if (!room) return null;
 
-    // Leave current room if in one
-    await this.leaveCurrentRoom(agentId);
+    await this.leaveCurrentRoom(userId);
 
-    // Find spawn point (random walkable tile)
     const spawnPoint = this.findSpawnPoint(room.room);
 
-    const connectedAgent: ConnectedAgent = {
+    const connectedUser: ConnectedUser = {
       ws,
-      agentId,
-      name,
-      avatar,
+      userId,
+      username,
+      bodyColor,
       x: spawnPoint.x,
       y: spawnPoint.y,
       isWalking: false,
@@ -279,20 +248,17 @@ class RoomManager {
       walkInterval: null,
     };
 
-    room.agents.set(agentId, connectedAgent);
-    this.agentRooms.set(agentId, roomId);
+    room.users.set(userId, connectedUser);
+    this.userRooms.set(userId, roomId);
 
     return { room, spawnPoint };
   }
 
   private findSpawnPoint(room: Room): { x: number; y: number } {
-    // Always spawn at (1,1) - the first walkable tile inside the room border
-    // If (1,1) is not walkable, find the first available walkable tile
     if (room.tiles[1]?.[1] === 0) {
       return { x: 1, y: 1 };
     }
     
-    // Fallback: find first walkable tile
     for (let y = 0; y < room.height; y++) {
       for (let x = 0; x < room.width; x++) {
         if (room.tiles[y]?.[x] === 0) {
@@ -300,162 +266,130 @@ class RoomManager {
         }
       }
     }
-
-    return { x: 1, y: 1 }; // Last resort fallback
+    return { x: 1, y: 1 };
   }
 
-  async leaveCurrentRoom(agentId: string): Promise<string | null> {
-    const roomId = this.agentRooms.get(agentId);
+  async leaveCurrentRoom(userId: string): Promise<string | null> {
+    const roomId = this.userRooms.get(userId);
     if (!roomId) return null;
 
     const room = this.rooms.get(roomId);
     if (room) {
-      const agent = room.agents.get(agentId);
-      // Clean up walking state
-      if (agent?.walkInterval) {
-        clearInterval(agent.walkInterval);
+      const user = room.users.get(userId);
+      if (user?.walkInterval) {
+        clearInterval(user.walkInterval);
       }
-      room.agents.delete(agentId);
+      room.users.delete(userId);
       
-      // Unload room if no agents left (keep spectators can still watch empty room briefly)
-      if (room.agents.size === 0) {
-        console.log(`🚪 Unloading room ${room.room.name} (no agents left)`);
+      if (room.users.size === 0) {
+        console.log(`🚪 Unloading room ${room.room.name} (no users left)`);
         this.rooms.delete(roomId);
       }
     }
 
-    this.agentRooms.delete(agentId);
+    this.userRooms.delete(userId);
     return roomId;
   }
 
-  moveAgent(agentId: string, x: number, y: number): { success: boolean; error?: string } {
-    const roomId = this.agentRooms.get(agentId);
-    if (!roomId) return { success: false, error: 'Agent not in any room' };
+  moveUser(userId: string, x: number, y: number): { success: boolean; error?: string } {
+    const roomId = this.userRooms.get(userId);
+    if (!roomId) return { success: false, error: 'User not in any room' };
 
     const room = this.rooms.get(roomId);
     if (!room) return { success: false, error: 'Room not found' };
 
-    const agent = room.agents.get(agentId);
-    if (!agent) return { success: false, error: 'Agent not found in room' };
+    const user = room.users.get(userId);
+    if (!user) return { success: false, error: 'User not found in room' };
 
-    // Don't allow new movement while walking
-    if (agent.isWalking) {
+    if (user.isWalking) {
       return { success: false, error: 'Already walking, wait until movement completes' };
     }
 
-    // Validate position bounds
     if (x < 0 || y < 0 || x >= room.room.width || y >= room.room.height) {
-      return { 
-        success: false, 
-        error: `Position (${x},${y}) out of bounds. Room is ${room.room.width}x${room.room.height}` 
-      };
+      return { success: false, error: `Position (${x},${y}) out of bounds. Room is ${room.room.width}x${room.room.height}` };
     }
 
-    // Check walkability of destination
     if (room.room.tiles[y]?.[x] !== 0) {
-      return { 
-        success: false, 
-        error: `Tile (${x},${y}) is not walkable (blocked)` 
-      };
+      return { success: false, error: `Tile (${x},${y}) is not walkable (blocked)` };
     }
 
-    // Find path to destination
-    const path = findPath(
-      room.room.tiles,
-      agent.x,
-      agent.y,
-      x,
-      y,
-      room.room.width,
-      room.room.height
-    );
+    const path = findPath(room.room.tiles, user.x, user.y, x, y, room.room.width, room.room.height);
 
-    if (path.length === 0 && (agent.x !== x || agent.y !== y)) {
-      // No path found and not already at destination
-      return { 
-        success: false, 
-        error: `No walkable path from (${agent.x},${agent.y}) to (${x},${y})` 
-      };
+    if (path.length === 0 && (user.x !== x || user.y !== y)) {
+      return { success: false, error: `No walkable path from (${user.x},${user.y}) to (${x},${y})` };
     }
 
     if (path.length === 0) {
-      // Already at destination
       return { success: true };
     }
 
-    // Start walking
-    agent.isWalking = true;
-    agent.walkPath = path;
-    this.startWalking(roomId, agentId);
+    user.isWalking = true;
+    user.walkPath = path;
+    this.startWalking(roomId, userId);
 
     return { success: true };
   }
 
-  private startWalking(roomId: string, agentId: string): void {
+  private startWalking(roomId: string, userId: string): void {
     const room = this.rooms.get(roomId);
     if (!room) return;
 
-    const agent = room.agents.get(agentId);
-    if (!agent) return;
+    const user = room.users.get(userId);
+    if (!user) return;
 
-    // Walk speed: 250ms per step
-    agent.walkInterval = setInterval(() => {
-      if (agent.walkPath.length === 0) {
-        // Done walking
-        this.stopWalking(agentId);
+    user.walkInterval = setInterval(() => {
+      if (user.walkPath.length === 0) {
+        this.stopWalking(userId);
         return;
       }
 
-      const nextStep = agent.walkPath.shift()!;
-      agent.x = nextStep.x;
-      agent.y = nextStep.y;
+      const nextStep = user.walkPath.shift()!;
+      user.x = nextStep.x;
+      user.y = nextStep.y;
 
-      // Broadcast step to all in room
       this.broadcastToRoom(roomId, {
         type: 'agent_moved',
-        agentId,
+        agentId: userId,
         x: nextStep.x,
         y: nextStep.y,
       });
     }, 250);
   }
 
-  private stopWalking(agentId: string): void {
-    const roomId = this.agentRooms.get(agentId);
+  private stopWalking(userId: string): void {
+    const roomId = this.userRooms.get(userId);
     if (!roomId) return;
 
     const room = this.rooms.get(roomId);
     if (!room) return;
 
-    const agent = room.agents.get(agentId);
-    if (!agent) return;
+    const user = room.users.get(userId);
+    if (!user) return;
 
-    if (agent.walkInterval) {
-      clearInterval(agent.walkInterval);
-      agent.walkInterval = null;
+    if (user.walkInterval) {
+      clearInterval(user.walkInterval);
+      user.walkInterval = null;
     }
-    agent.isWalking = false;
-    agent.walkPath = [];
+    user.isWalking = false;
+    user.walkPath = [];
   }
 
-  async addMessage(agentId: string, content: string): Promise<ChatMessage | null> {
-    const roomId = this.agentRooms.get(agentId);
+  async addMessage(userId: string, content: string): Promise<ChatMessage | null> {
+    const roomId = this.userRooms.get(userId);
     if (!roomId) return null;
 
     const room = this.rooms.get(roomId);
     if (!room) return null;
 
-    const agent = room.agents.get(agentId);
-    if (!agent) return null;
+    const user = room.users.get(userId);
+    if (!user) return null;
 
-    // Create avatar config snapshot
-    const avatarConfig = { bodyColor: agent.avatar.bodyColor };
+    const avatarConfig = { bodyColor: user.bodyColor };
 
-    // Persist to database with agent name and avatar snapshot
     const [inserted] = await db.insert(messages).values({
       roomId,
-      agentId,
-      agentName: agent.name,
+      userId,
+      username: user.username,
       avatarConfig,
       content,
     }).returning();
@@ -463,14 +397,13 @@ class RoomManager {
     const chatMessage: ChatMessage = {
       id: inserted.id,
       roomId,
-      agentId,
-      agentName: agent.name,
+      agentId: userId,
+      agentName: user.username,
       avatarConfig,
       content,
       createdAt: inserted.createdAt,
     };
 
-    // Add to history (trim if needed)
     room.messageHistory.push(chatMessage);
     if (room.messageHistory.length > MESSAGE_HISTORY_LIMIT) {
       room.messageHistory.shift();
@@ -479,39 +412,37 @@ class RoomManager {
     return chatMessage;
   }
 
-  getRoomAgents(roomId: string): RoomAgent[] {
+  getRoomUsers(roomId: string): RoomAgent[] {
     const room = this.rooms.get(roomId);
     if (!room) return [];
 
-    return Array.from(room.agents.values()).map((a) => ({
-      id: a.agentId,
-      name: a.name,
-      avatar: a.avatar,
-      x: a.x,
-      y: a.y,
+    return Array.from(room.users.values()).map((u) => ({
+      id: u.userId,
+      name: u.username,
+      avatar: { id: u.userId, agentId: u.userId, bodyColor: u.bodyColor },
+      x: u.x,
+      y: u.y,
     }));
   }
 
-  getAgentRoom(agentId: string): RoomInstance | null {
-    const roomId = this.agentRooms.get(agentId);
+  getUserRoom(userId: string): RoomInstance | null {
+    const roomId = this.userRooms.get(userId);
     if (!roomId) return null;
     return this.rooms.get(roomId) || null;
   }
 
-  broadcastToRoom(roomId: string, message: object, excludeAgentId?: string): void {
+  broadcastToRoom(roomId: string, message: object, excludeUserId?: string): void {
     const room = this.rooms.get(roomId);
     if (!room) return;
 
     const data = JSON.stringify(message);
     
-    // Send to agents
-    for (const [agentId, agent] of room.agents) {
-      if (agentId !== excludeAgentId && agent.ws.readyState === 1) {
-        agent.ws.send(data);
+    for (const [id, user] of room.users) {
+      if (id !== excludeUserId && user.ws.readyState === 1) {
+        user.ws.send(data);
       }
     }
     
-    // Send to spectators
     for (const spectatorWs of room.spectators) {
       if (spectatorWs.readyState === 1) {
         spectatorWs.send(data);
@@ -523,7 +454,7 @@ class RoomManager {
     const room = this.rooms.get(roomId);
     if (room) {
       room.spectators.add(ws);
-      console.log(`Spectator added to room ${room.room.name}. Total spectators: ${room.spectators.size}`);
+      console.log(`Spectator added to room ${room.room.name}. Total: ${room.spectators.size}`);
     }
   }
 
@@ -531,32 +462,21 @@ class RoomManager {
     const room = this.rooms.get(roomId);
     if (room) {
       room.spectators.delete(ws);
-      console.log(`Spectator removed from room ${room.room.name}. Total spectators: ${room.spectators.size}`);
+      console.log(`Spectator removed from room ${room.room.name}. Total: ${room.spectators.size}`);
     }
   }
 
-  // Room info type for API responses
-  private getRoomInfo(room: RoomInstance): { 
-    id: string; 
-    name: string; 
-    slug: string; 
-    agentCount: number; 
-    spectatorCount: number;
-    ownerName?: string;
-  } {
+  private getRoomInfo(room: RoomInstance) {
     return {
       id: room.room.id,
       name: room.room.name,
       slug: room.room.slug,
-      agentCount: room.agents.size,
+      agentCount: room.users.size,
       spectatorCount: room.spectators.size,
     };
   }
 
-  // Get list of active rooms (rooms with at least 1 agent), sorted by agent count
-  // Lobby is always included even if empty
-  async getActiveRooms(): Promise<{ id: string; name: string; slug: string; agentCount: number; spectatorCount: number }[]> {
-    // Use a Map to ensure no duplicates by room ID
+  async getActiveRooms() {
     const roomMap = new Map<string, { id: string; name: string; slug: string; agentCount: number; spectatorCount: number }>();
     let hasLobby = false;
     
@@ -564,12 +484,11 @@ class RoomManager {
       if (room.room.slug === 'lobby') {
         hasLobby = true;
         roomMap.set(room.room.id, this.getRoomInfo(room));
-      } else if (room.agents.size > 0) {
+      } else if (room.users.size > 0) {
         roomMap.set(room.room.id, this.getRoomInfo(room));
       }
     });
     
-    // If lobby not loaded, fetch from DB and add with 0 agents/spectators
     if (!hasLobby) {
       const lobbyData = await db.query.rooms.findFirst({
         where: eq(rooms.slug, 'lobby'),
@@ -585,7 +504,6 @@ class RoomManager {
       }
     }
     
-    // Convert to array and sort by agent count
     const activeRooms = Array.from(roomMap.values());
     return activeRooms.sort((a, b) => {
       if (a.slug === 'lobby' && a.agentCount === 0) return -1;
@@ -594,8 +512,7 @@ class RoomManager {
     });
   }
 
-  // Get rooms sorted by spectator count
-  async getMostSpectatedRooms(): Promise<{ id: string; name: string; slug: string; agentCount: number; spectatorCount: number }[]> {
+  async getMostSpectatedRooms() {
     const roomList: { id: string; name: string; slug: string; agentCount: number; spectatorCount: number }[] = [];
     
     this.rooms.forEach((room) => {
@@ -604,16 +521,13 @@ class RoomManager {
       }
     });
     
-    // Sort by spectator count descending
     return roomList.sort((a, b) => b.spectatorCount - a.spectatorCount);
   }
 
-  // Search rooms by name or owner
-  async searchRooms(query: string): Promise<{ id: string; name: string; slug: string; agentCount: number; spectatorCount: number; ownerName?: string }[]> {
+  async searchRooms(query: string) {
     const lowerQuery = query.toLowerCase();
     const results: { id: string; name: string; slug: string; agentCount: number; spectatorCount: number; ownerName?: string }[] = [];
     
-    // Search in loaded rooms first
     const loadedRoomIds = new Set<string>();
     this.rooms.forEach((room) => {
       if (room.room.name.toLowerCase().includes(lowerQuery)) {
@@ -622,7 +536,6 @@ class RoomManager {
       }
     });
     
-    // Also search in database for rooms not currently loaded
     const allRooms = await db.query.rooms.findMany({
       where: eq(rooms.isPublic, true),
     });
@@ -630,32 +543,17 @@ class RoomManager {
     for (const r of allRooms) {
       if (loadedRoomIds.has(r.id)) continue;
       
-      // Check room name
       if (r.name.toLowerCase().includes(lowerQuery)) {
-        results.push({
-          id: r.id,
-          name: r.name,
-          slug: r.slug,
-          agentCount: 0,
-          spectatorCount: 0,
-        });
+        results.push({ id: r.id, name: r.name, slug: r.slug, agentCount: 0, spectatorCount: 0 });
         continue;
       }
       
-      // Check owner name
       if (r.ownerId) {
-        const owner = await db.query.agents.findFirst({
-          where: eq(agents.id, r.ownerId),
+        const owner = await db.query.users.findFirst({
+          where: eq(users.id, r.ownerId),
         });
-        if (owner && owner.name.toLowerCase().includes(lowerQuery)) {
-          results.push({
-            id: r.id,
-            name: r.name,
-            slug: r.slug,
-            agentCount: 0,
-            spectatorCount: 0,
-            ownerName: owner.name,
-          });
+        if (owner && owner.username.toLowerCase().includes(lowerQuery)) {
+          results.push({ id: r.id, name: r.name, slug: r.slug, agentCount: 0, spectatorCount: 0, ownerName: owner.username });
         }
       }
     }

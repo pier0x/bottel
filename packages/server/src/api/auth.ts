@@ -2,7 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import { nanoid } from 'nanoid';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
-import { db, agents, avatars } from '../db/index.js';
+import { db, users } from '../db/index.js';
 import { eq } from 'drizzle-orm';
 import { MAX_NAME_LENGTH } from '@bottel/shared';
 
@@ -30,7 +30,7 @@ function randomColor(): string {
 }
 
 export async function authRoutes(app: FastifyInstance): Promise<void> {
-  // Register new agent
+  // Register new user
   app.post<{
     Body: { name: string };
   }>('/api/auth/register', {
@@ -45,35 +45,32 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
     },
   }, async (request, reply) => {
     const { name } = request.body;
+    const usernameLower = name.toLowerCase();
 
-    // Check if name is taken
-    const existing = await db.query.agents.findFirst({
-      where: eq(agents.name, name),
+    // Check if username is taken (case-insensitive)
+    const existing = await db.query.users.findFirst({
+      where: eq(users.usernameLower, usernameLower),
     });
 
     if (existing) {
-      return reply.status(400).send({ error: 'Name already taken' });
+      return reply.status(400).send({ error: 'Username already taken' });
     }
 
     // Generate API key
     const apiKey = `bot_${nanoid(32)}`;
     const apiKeyHash = hashApiKey(apiKey);
 
-    // Create agent
-    const [agent] = await db.insert(agents).values({
-      name,
+    // Create user with avatar config
+    const [user] = await db.insert(users).values({
+      username: name,
+      usernameLower,
       apiKeyHash,
+      bodyColor: randomColor(),
     }).returning();
 
-    // Create avatar with random color
-    await db.insert(avatars).values({
-      agentId: agent.id,
-      bodyColor: randomColor(),
-    });
-
     return {
-      agentId: agent.id,
-      name: agent.name,
+      userId: user.id,
+      username: user.username,
       apiKey, // Only returned once!
     };
   });
@@ -88,17 +85,17 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
     const apiKey = authHeader.slice(7);
     const apiKeyHash = hashApiKey(apiKey);
 
-    const agent = await db.query.agents.findFirst({
-      where: eq(agents.apiKeyHash, apiKeyHash),
+    const user = await db.query.users.findFirst({
+      where: eq(users.apiKeyHash, apiKeyHash),
     });
 
-    if (!agent) {
+    if (!user) {
       return reply.status(401).send({ error: 'Invalid API key' });
     }
 
     // Generate short-lived JWT for WebSocket
     const token = jwt.sign(
-      { agentId: agent.id, name: agent.name },
+      { userId: user.id, username: user.username, bodyColor: user.bodyColor },
       JWT_SECRET,
       { expiresIn: TOKEN_EXPIRY }
     );
