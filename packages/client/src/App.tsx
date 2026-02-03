@@ -144,7 +144,7 @@ function App() {
   // Smooth movement animation loop
   useEffect(() => {
     let animationId: number;
-    const speed = 0.08; // Tiles per frame (~5 tiles/sec at 60fps)
+    const speed = 0.12; // Tiles per frame (~7 tiles/sec at 60fps)
     
     const animate = () => {
       let needsUpdate = false;
