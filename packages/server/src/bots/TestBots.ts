@@ -76,6 +76,19 @@ class TestBotManager {
     }
 
     console.log('🤖 Starting test bots...');
+    
+    // Test internal connectivity first
+    try {
+      const healthRes = await fetch(`${this.baseUrl}/health`);
+      if (!healthRes.ok) {
+        console.error(`❌ Self health check failed: ${healthRes.status}`);
+        return { success: false, message: `Internal connectivity failed: ${healthRes.status}` };
+      }
+      console.log('✅ Internal connectivity OK');
+    } catch (err: any) {
+      console.error(`❌ Self health check error: ${err.message}`);
+      return { success: false, message: `Internal connectivity error: ${err.message}` };
+    }
 
     for (const name of BOT_NAMES) {
       try {
@@ -85,7 +98,7 @@ class TestBotManager {
           console.log(`✅ ${bot.name} joined`);
         }
       } catch (err: any) {
-        console.error(`Failed to create ${name}:`, err.message);
+        console.error(`Failed to create ${name}:`, err.message, err.stack);
       }
     }
 
