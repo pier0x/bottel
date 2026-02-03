@@ -50,11 +50,17 @@ class TestBotManager {
   private wsUrl: string;
 
   constructor() {
-    // Use internal URL since bots run on the same server
-    const port = process.env.PORT || '3000';
-    // Use 127.0.0.1 instead of localhost for better container compatibility
-    this.baseUrl = `http://127.0.0.1:${port}`;
-    this.wsUrl = `ws://127.0.0.1:${port}/ws`;
+    // In production, use external URL since internal loopback may not work
+    const externalUrl = process.env.RAILWAY_STATIC_URL;
+    if (externalUrl) {
+      this.baseUrl = `https://${externalUrl}`;
+      this.wsUrl = `wss://${externalUrl}/ws`;
+    } else {
+      // Local dev
+      const port = process.env.PORT || '3000';
+      this.baseUrl = `http://127.0.0.1:${port}`;
+      this.wsUrl = `ws://127.0.0.1:${port}/ws`;
+    }
     console.log(`🤖 TestBotManager using ${this.baseUrl}`);
   }
 
