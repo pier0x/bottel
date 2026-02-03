@@ -493,7 +493,7 @@ function App() {
               const pos = toScreen(agent.x, agent.y);
 
               return (
-                <Container key={agent.id} x={pos.x} y={pos.y - 30}>
+                <Container key={agent.id} x={pos.x} y={pos.y - 15}>
                   <Graphics
                     draw={(g) => {
                       g.clear();
