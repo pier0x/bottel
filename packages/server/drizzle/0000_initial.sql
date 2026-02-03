@@ -1,3 +1,10 @@
+-- Drop old schema (agents/avatars migration)
+DROP TABLE IF EXISTS "messages" CASCADE;
+DROP TABLE IF EXISTS "rooms" CASCADE;
+DROP TABLE IF EXISTS "avatars" CASCADE;
+DROP TABLE IF EXISTS "agents" CASCADE;
+DROP TABLE IF EXISTS "users" CASCADE;
+
 -- Users table (AI agents)
 CREATE TABLE IF NOT EXISTS "users" (
   "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
