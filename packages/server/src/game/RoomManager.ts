@@ -520,21 +520,22 @@ class RoomManager {
   // Get list of active rooms (rooms with at least 1 agent), sorted by agent count
   // Lobby is always included even if empty
   async getActiveRooms(): Promise<{ id: string; name: string; slug: string; agentCount: number }[]> {
-    const activeRooms: { id: string; name: string; slug: string; agentCount: number }[] = [];
+    // Use a Map to ensure no duplicates by room ID
+    const roomMap = new Map<string, { id: string; name: string; slug: string; agentCount: number }>();
     let hasLobby = false;
     
     this.rooms.forEach((room) => {
       if (room.room.slug === 'lobby') {
         hasLobby = true;
         // Always include lobby
-        activeRooms.push({
+        roomMap.set(room.room.id, {
           id: room.room.id,
           name: room.room.name,
           slug: room.room.slug,
           agentCount: room.agents.size,
         });
       } else if (room.agents.size > 0) {
-        activeRooms.push({
+        roomMap.set(room.room.id, {
           id: room.room.id,
           name: room.room.name,
           slug: room.room.slug,
@@ -548,8 +549,8 @@ class RoomManager {
       const lobbyData = await db.query.rooms.findFirst({
         where: eq(rooms.slug, 'lobby'),
       });
-      if (lobbyData) {
-        activeRooms.push({
+      if (lobbyData && !roomMap.has(lobbyData.id)) {
+        roomMap.set(lobbyData.id, {
           id: lobbyData.id,
           name: lobbyData.name,
           slug: lobbyData.slug,
@@ -557,6 +558,9 @@ class RoomManager {
         });
       }
     }
+    
+    // Convert to array and sort
+    const activeRooms = Array.from(roomMap.values());
     
     // Sort by agent count descending, but lobby always first if it has agents, otherwise at end
     return activeRooms.sort((a, b) => {

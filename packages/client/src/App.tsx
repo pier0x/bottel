@@ -73,7 +73,17 @@ function App() {
     const fetchRooms = () => {
       fetch('/api/rooms/active')
         .then(res => res.json())
-        .then(data => setActiveRooms(data.rooms || []))
+        .then(data => {
+          const roomsData = data.rooms || [];
+          // Deduplicate by room ID (defensive)
+          const seen = new Set<string>();
+          const uniqueRooms = roomsData.filter((r: typeof activeRooms[0]) => {
+            if (seen.has(r.id)) return false;
+            seen.add(r.id);
+            return true;
+          });
+          setActiveRooms(uniqueRooms);
+        })
         .catch(() => {});
     };
     
