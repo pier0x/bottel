@@ -848,8 +848,8 @@ function App() {
                       y={pos.y}
                       draw={(g) => {
                         g.clear();
-                        g.beginFill(isAlt ? 0x3d3d5c : 0x4a4a6a);
-                        g.lineStyle(1, 0x5a5a7a, 0.5);
+                        g.beginFill(isAlt ? 0x5c5c8a : 0x6a6a9a);
+                        g.lineStyle(1, 0x7a7aaa, 0.5);
                         g.moveTo(0, -TILE_HEIGHT / 2);
                         g.lineTo(TILE_WIDTH / 2, 0);
                         g.lineTo(0, TILE_HEIGHT / 2);
