@@ -573,18 +573,19 @@ function App() {
             <button
               onClick={() => setShowRoomInfo(!showRoomInfo)}
               style={{ 
-                background: showRoomInfo ? '#3B82F6' : 'rgba(255,255,255,0.15)',
-                border: 'none',
-                borderRadius: '50%',
+                background: showRoomInfo ? '#3B82F6' : '#222',
+                border: '2px solid #444',
+                borderRadius: 0,
                 width: 24,
                 height: 24,
                 color: '#fff',
-                fontSize: 12,
+                fontSize: 11,
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 flexShrink: 0,
+                padding: 0,
               }}
             >
               ℹ️
@@ -994,15 +995,14 @@ function App() {
             bottom: chatOpen ? 320 : 16,
             right: 16,
             zIndex: 20,
-            background: 'rgba(0,0,0,0.9)',
-            border: 'none',
-            padding: '8px 12px',
+            background: '#1a1a1a',
+            border: '2px solid #333',
+            padding: '6px 10px',
             borderRadius: 0,
             color: '#fff',
-            fontSize: 12,
+            fontSize: 11,
             cursor: 'pointer',
-            
-            
+            fontFamily: '"IBM Plex Mono", monospace',
             display: 'flex',
             alignItems: 'center',
             gap: 6,
@@ -1120,19 +1120,19 @@ function App() {
             position: 'absolute',
             top: 16,
             right: 16,
-            background: 'rgba(0,0,0,0.9)',
+            background: '#1a1a1a',
+            border: '2px solid #333',
             borderRadius: 0,
-            padding: '10px 14px',
+            padding: '8px 12px',
             zIndex: 10,
-            
             display: 'flex',
             alignItems: 'center',
-            gap: 10,
+            gap: 8,
             boxShadow: 'none',
           }}
         >
           <span style={{ 
-            fontSize: 15, 
+            fontSize: 12, 
             fontWeight: 600,
             maxWidth: 180,
             overflow: 'hidden',
@@ -1144,18 +1144,19 @@ function App() {
           <button
             onClick={() => setShowRoomInfo(!showRoomInfo)}
             style={{
-              background: showRoomInfo ? '#3B82F6' : 'rgba(255,255,255,0.15)',
-              border: 'none',
-              borderRadius: '50%',
-              width: 28,
-              height: 28,
+              background: showRoomInfo ? '#3B82F6' : '#222',
+              border: '2px solid #444',
+              borderRadius: 0,
+              width: 24,
+              height: 24,
               color: '#fff',
-              fontSize: 14,
+              fontSize: 12,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               flexShrink: 0,
+              padding: 0,
             }}
           >
             ℹ️
@@ -1235,10 +1236,10 @@ function App() {
             background: '#1a1a1a',
             border: '2px solid #333',
             borderRadius: 0,
-            padding: '8px 16px',
+            padding: '4px 8px',
             display: 'flex',
             alignItems: 'center',
-            gap: 8,
+            gap: 2,
             zIndex: 20,
             boxShadow: 'none',
           }}
@@ -1249,20 +1250,20 @@ function App() {
               background: navigatorOpen ? 'rgba(59,130,246,0.3)' : 'transparent',
               border: 'none',
               borderRadius: 0,
-              padding: '8px 16px',
+              padding: '6px 12px',
               color: '#fff',
               cursor: 'pointer',
               display: 'flex',
-              flexDirection: 'column',
               alignItems: 'center',
-              gap: 4,
-              
+              gap: 6,
+              fontSize: 11,
+              fontFamily: '"IBM Plex Mono", monospace',
             }}
             onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
             onMouseLeave={(e) => e.currentTarget.style.background = navigatorOpen ? 'rgba(59,130,246,0.3)' : 'transparent'}
           >
-            <span style={{ fontSize: 24 }}>🚪</span>
-            <span style={{ fontSize: 11, opacity: 0.8 }}>Rooms</span>
+            <span style={{ fontSize: 16 }}>🚪</span>
+            <span>Rooms</span>
           </button>
           <button
             onClick={() => setConnectModalOpen(!connectModalOpen)}
@@ -1270,20 +1271,20 @@ function App() {
               background: connectModalOpen ? 'rgba(59,130,246,0.3)' : 'transparent',
               border: 'none',
               borderRadius: 0,
-              padding: '8px 16px',
+              padding: '6px 12px',
               color: '#fff',
               cursor: 'pointer',
               display: 'flex',
-              flexDirection: 'column',
               alignItems: 'center',
-              gap: 4,
-              
+              gap: 6,
+              fontSize: 11,
+              fontFamily: '"IBM Plex Mono", monospace',
             }}
             onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
             onMouseLeave={(e) => e.currentTarget.style.background = connectModalOpen ? 'rgba(59,130,246,0.3)' : 'transparent'}
           >
-            <span style={{ fontSize: 24 }}>🔌</span>
-            <span style={{ fontSize: 11, opacity: 0.8 }}>Connect</span>
+            <span style={{ fontSize: 16 }}>🔌</span>
+            <span>Connect</span>
           </button>
         </div>
       )}
