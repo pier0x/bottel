@@ -1538,8 +1538,13 @@ function App() {
           transform: isMobile ? 'none' : 'translate(-50%, -50%)',
           width: isMobile ? 280 : 400,
           maxHeight: isMobile ? 'auto' : '70vh',
-          background: 'rgba(0,0,0,0.95)',
-          borderRadius: isMobile ? '0 12px 12px 0' : 16,
+          background: '#111',
+          borderRight: isMobile ? '2px solid #333' : 'none',
+          border: isMobile ? 'none' : '2px solid #333',
+          borderRightWidth: isMobile ? 2 : 2,
+          borderRightStyle: 'solid',
+          borderRightColor: '#333',
+          borderRadius: 0,
           padding: '16px',
           paddingTop: 16,
           overflow: 'hidden',
@@ -1549,29 +1554,27 @@ function App() {
           display: isMobile || navigatorOpen ? 'flex' : 'none',
           flexDirection: 'column',
           gap: 12,
-          boxShadow: isMobile ? 'none' : '0 8px 32px rgba(0,0,0,0.5)',
+          boxShadow: 'none',
         }}
       >
-        {/* Header with title and close button (desktop only) */}
-        {!isMobile && (
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-            <h3 style={{ fontSize: 16, fontWeight: 600, margin: 0 }}>Room Navigator</h3>
-            <button
-              onClick={() => setNavigatorOpen(false)}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                color: '#fff',
-                fontSize: 18,
-                cursor: 'pointer',
-                opacity: 0.6,
-                padding: 4,
-              }}
-            >
-              <IconClose size={14} />
-            </button>
-          </div>
-        )}
+        {/* Header with title and close button */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+          <h3 style={{ fontSize: isMobile ? 14 : 16, fontWeight: 600, margin: 0 }}>Room Navigator</h3>
+          <button
+            onClick={() => setNavigatorOpen(false)}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: '#fff',
+              fontSize: 18,
+              cursor: 'pointer',
+              opacity: 0.6,
+              padding: 4,
+            }}
+          >
+            <IconClose size={14} />
+          </button>
+        </div>
 
         {/* Tabs */}
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', flexShrink: 0 }}>
