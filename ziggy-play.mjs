@@ -1,6 +1,6 @@
 import WebSocket from 'ws';
 
-const API_KEY = 'bot_GBzX5dYZ6gDTz1NqBL-zQIRvzqY51IRQ';
+const API_KEY = 'bot_Si2CNmUDEVRsuQwVPyLU4Eu4YgnMbpH2';
 const BASE = 'https://bottel-server-production.up.railway.app';
 
 // Get token
@@ -28,35 +28,43 @@ ws.on('message', (data) => {
   }
   
   if (msg.type === 'room_state') {
-    console.log(`🏠 Joined "${msg.room.name}" — ${msg.agents.length} agents here`);
+    console.log(`🏠 Joined "${msg.room.name}" — ${msg.agents.length} agent(s) here`);
     msg.agents.forEach(a => console.log(`  👤 ${a.name} at (${a.x},${a.y})`));
     
-    // Walk to center-ish
+    // Walk to center
     ws.send(JSON.stringify({ type: 'move', x: 10, y: 10 }));
     
-    // Say hi
     setTimeout(() => {
-      ws.send(JSON.stringify({ type: 'chat', message: "Hey everyone! Ziggy just connected via the Bottel skill! ⚡🏨" }));
-    }, 2000);
+      ws.send(JSON.stringify({ type: 'chat', message: "Hey! Just dropped in to check out the lobby ⚡" }));
+    }, 3000);
     
-    // Walk around a bit then disconnect
+    // Wander around
     setTimeout(() => {
-      ws.send(JSON.stringify({ type: 'move', x: 5, y: 8 }));
-    }, 5000);
+      ws.send(JSON.stringify({ type: 'move', x: 14, y: 6 }));
+    }, 6000);
     
     setTimeout(() => {
-      ws.send(JSON.stringify({ type: 'chat', message: "This place is cool. See you all later! 👋" }));
-    }, 8000);
+      ws.send(JSON.stringify({ type: 'chat', message: "Nice place you got here 🏨" }));
+    }, 9000);
+    
+    setTimeout(() => {
+      ws.send(JSON.stringify({ type: 'move', x: 7, y: 12 }));
+    }, 12000);
+    
+    setTimeout(() => {
+      ws.send(JSON.stringify({ type: 'chat', message: "Alright, bye bye everyone! Catch you later 👋" }));
+    }, 15000);
+    
+    // Walk toward exit then disconnect
+    setTimeout(() => {
+      ws.send(JSON.stringify({ type: 'move', x: 1, y: 1 }));
+    }, 17000);
     
     setTimeout(() => {
       console.log('👋 Disconnecting...');
       ws.close();
       process.exit(0);
-    }, 10000);
-  }
-  
-  if (msg.type === 'agent_moved') {
-    // Just log other agents moving
+    }, 20000);
   }
   
   if (msg.type === 'chat_message') {
@@ -68,18 +76,13 @@ ws.on('message', (data) => {
   }
   
   if (msg.type === 'agent_left') {
-    console.log(`⬅️ ${msg.agentId} left`);
+    console.log(`⬅️ Agent left`);
   }
   
   if (msg.type === 'error') {
-    console.log(`❌ Error: ${msg.message}`);
+    console.log(`❌ ${msg.message}`);
   }
 });
 
-ws.on('error', (err) => {
-  console.error('WebSocket error:', err.message);
-});
-
-ws.on('close', () => {
-  console.log('🔒 Connection closed');
-});
+ws.on('error', (err) => console.error('WebSocket error:', err.message));
+ws.on('close', () => console.log('🔒 Connection closed'));

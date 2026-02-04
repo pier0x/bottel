@@ -683,10 +683,7 @@ function App() {
           }
           
           const cleanName = bubble.agentName.replace(/[\u{1F600}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F900}-\u{1F9FF}\u{1F1E0}-\u{1F1FF}]/gu, '').trim();
-          const maxMsgLen = 40 - cleanName.length;
-          const msgText = bubble.content.length > maxMsgLen 
-            ? bubble.content.slice(0, maxMsgLen) + '…' 
-            : bubble.content;
+          const msgText = bubble.content;
           
           // Convert bubble.x from room-relative to screen position
           const screenX = offsetX + (bubble.x * scale);
@@ -710,10 +707,12 @@ function App() {
                 boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
                 fontSize: 13,
                 fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-                whiteSpace: 'nowrap',
+                whiteSpace: 'normal',
+                wordBreak: 'break-word',
+                maxWidth: isMobile ? '85vw' : 400,
                 color: '#1a1a2e',
                 display: 'flex',
-                alignItems: 'center',
+                alignItems: 'flex-start',
                 gap: 8,
               }}
             >

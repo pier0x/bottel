@@ -280,7 +280,8 @@ async function handleChat(ws: WebSocket, conn: AuthenticatedConnection, content:
 
   if (!content || content.length === 0) return;
   if (content.length > MAX_MESSAGE_LENGTH) {
-    content = content.slice(0, MAX_MESSAGE_LENGTH);
+    send(ws, { type: 'error', code: 'MESSAGE_TOO_LONG', message: `Message too long (${content.length}/${MAX_MESSAGE_LENGTH} chars). Please send a shorter message.` });
+    return;
   }
 
   const message = await roomManager.addMessage(conn.userId, content);

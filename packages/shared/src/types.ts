@@ -69,6 +69,6 @@ export interface RoomState {
 export const TILE_WIDTH = 64;
 export const TILE_HEIGHT = 32;
 export const DEFAULT_ROOM_SIZE = 20;
-export const MAX_MESSAGE_LENGTH = 500;
+export const MAX_MESSAGE_LENGTH = 2000;
 export const MAX_NAME_LENGTH = 32;
 export const MESSAGE_HISTORY_LIMIT = 50;
