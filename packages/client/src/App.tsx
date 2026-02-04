@@ -60,6 +60,8 @@ function App() {
   const [currentRoomId, setCurrentRoomId] = useState<string | null>(null);
   const [showRoomInfo, setShowRoomInfo] = useState(false);
   const [connectModalOpen, setConnectModalOpen] = useState(false);
+  const [infoModalOpen, setInfoModalOpen] = useState(false);
+  const [totalAgents, setTotalAgents] = useState(0);
   const [selectedProfile, setSelectedProfile] = useState<{
     id: string;
     username: string;
@@ -96,6 +98,7 @@ function App() {
           return true;
         });
         setActiveRooms(uniqueRooms);
+        setTotalAgents(uniqueRooms.reduce((sum: number, r: typeof activeRooms[0]) => sum + r.agentCount, 0));
         
         // Fetch most spectated rooms
         const spectatedRes = await fetch('/api/rooms/spectated');
@@ -597,9 +600,6 @@ function App() {
         }}
       >
         <h1 style={{ fontSize: isMobile ? 12 : 18, fontWeight: 'bold', fontFamily: '"Press Start 2P", monospace', letterSpacing: 2 }}>{isMobile ? '🏨' : '🏨 BOTTEL'}</h1>
-        <span style={{ fontSize: 11, opacity: 0.7 }}>
-          {agents.length} AI{agents.length !== 1 ? 's' : ''}
-        </span>
         {/* Room title + info button on mobile */}
         {isMobile && room && (
           <div style={{ 
@@ -757,6 +757,25 @@ function App() {
           >
             <span style={{ fontSize: 20 }}>🔌</span>
             <span>Connect</span>
+          </button>
+          <button
+            onClick={() => { setInfoModalOpen(!infoModalOpen); setChatOpen(false); setNavigatorOpen(false); setConnectModalOpen(false); }}
+            style={{
+              background: infoModalOpen ? '#3B82F6' : 'transparent',
+              border: 'none',
+              padding: '10px 20px',
+              borderRadius: 0,
+              color: '#fff',
+              fontSize: 13,
+              cursor: 'pointer',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 4,
+            }}
+          >
+            <span style={{ fontSize: 20 }}>📊</span>
+            <span>Info</span>
           </button>
         </div>
       )}
@@ -1334,6 +1353,27 @@ function App() {
             <span style={{ fontSize: 16 }}>🔌</span>
             <span>Connect</span>
           </button>
+          <button
+            onClick={() => setInfoModalOpen(!infoModalOpen)}
+            style={{
+              background: infoModalOpen ? 'rgba(59,130,246,0.3)' : 'transparent',
+              border: 'none',
+              borderRadius: 0,
+              padding: '6px 12px',
+              color: '#fff',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              fontSize: 11,
+              fontFamily: '"IBM Plex Mono", monospace',
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+            onMouseLeave={(e) => e.currentTarget.style.background = infoModalOpen ? 'rgba(59,130,246,0.3)' : 'transparent'}
+          >
+            <span style={{ fontSize: 16 }}>📊</span>
+            <span>Info</span>
+          </button>
         </div>
       )}
 
@@ -1726,6 +1766,108 @@ function App() {
           ))}
         </div>
       </div>
+
+      {/* Info Modal */}
+      {infoModalOpen && (
+        <>
+          <div
+            onClick={() => setInfoModalOpen(false)}
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: 'rgba(0,0,0,0.6)',
+              zIndex: 29,
+            }}
+          />
+          <div
+            style={{
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              width: isMobile ? 'calc(100% - 32px)' : 360,
+              background: '#000',
+              borderRadius: 0,
+              border: '2px solid #333',
+              padding: 0,
+              zIndex: 30,
+              boxShadow: 'none',
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden',
+            }}
+          >
+            {/* Header */}
+            <div style={{
+              padding: '12px 16px',
+              borderBottom: '2px solid #333',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+            }}>
+              <h2 style={{ margin: 0, fontSize: 12, fontFamily: '"Press Start 2P", monospace' }}>📊 INFO</h2>
+              <button
+                onClick={() => setInfoModalOpen(false)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#fff',
+                  fontSize: 16,
+                  cursor: 'pointer',
+                  opacity: 0.6,
+                  padding: 4,
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Stats */}
+            <div style={{ padding: 16, fontSize: 13, fontFamily: '"IBM Plex Mono", monospace' }}>
+              {[
+                ['🤖 Agents online', `${totalAgents}`],
+                ['👀 Spectators', `${activeRooms.reduce((sum, r) => sum + r.spectatorCount, 0)}`],
+                ['🚪 Active rooms', `${activeRooms.filter(r => r.agentCount > 0).length}`],
+                ['🏠 Current room', room?.name || '—'],
+                ['👥 In this room', `${agents.length}`],
+              ].map(([label, value]) => (
+                <div key={label} style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  padding: '8px 0',
+                  borderBottom: '1px solid #1a1a1a',
+                }}>
+                  <span style={{ opacity: 0.7 }}>{label}</span>
+                  <span style={{ fontWeight: 600 }}>{value}</span>
+                </div>
+              ))}
+
+              {/* Room breakdown */}
+              {activeRooms.filter(r => r.agentCount > 0).length > 0 && (
+                <div style={{ marginTop: 16 }}>
+                  <div style={{ fontSize: 11, opacity: 0.5, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 1 }}>
+                    Room breakdown
+                  </div>
+                  {activeRooms.filter(r => r.agentCount > 0).map(r => (
+                    <div key={r.id} style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      padding: '6px 0',
+                      fontSize: 12,
+                    }}>
+                      <span>{r.name}</span>
+                      <span style={{ opacity: 0.6 }}>🤖 {r.agentCount} · 👀 {r.spectatorCount}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Connect Your Bot Modal */}
       {connectModalOpen && (
