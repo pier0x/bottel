@@ -28,6 +28,7 @@ interface SpectatorConnection {
 
 const connections = new Map<WebSocket, AuthenticatedConnection>();
 const spectators = new Map<WebSocket, SpectatorConnection>();
+const aliveSockets = new WeakSet<WebSocket>();
 
 function send(ws: WebSocket, message: ServerMessage): void {
   if (ws.readyState === 1) {
@@ -35,8 +36,31 @@ function send(ws: WebSocket, message: ServerMessage): void {
   }
 }
 
+// Server-side ping every 30s to detect dead connections
+const PING_INTERVAL = 30_000;
+setInterval(() => {
+  const allSockets = new Set<WebSocket>();
+  for (const ws of connections.keys()) allSockets.add(ws);
+  for (const ws of spectators.keys()) allSockets.add(ws);
+  
+  for (const ws of allSockets) {
+    if (!aliveSockets.has(ws)) {
+      // Didn't respond to last ping — terminate
+      ws.terminate();
+      continue;
+    }
+    aliveSockets.delete(ws);
+    ws.ping();
+  }
+}, PING_INTERVAL);
+
 export async function handleConnection(ws: WebSocket, request: FastifyRequest): Promise<void> {
   console.log('New WebSocket connection');
+  aliveSockets.add(ws);
+  
+  ws.on('pong', () => {
+    aliveSockets.add(ws);
+  });
 
   ws.on('message', async (data: Buffer) => {
     try {

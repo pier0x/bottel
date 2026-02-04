@@ -306,36 +306,70 @@ function App() {
     return () => clearInterval(interval);
   }, []);
 
-  // Connect to WebSocket as spectator
+  // Connect to WebSocket as spectator with auto-reconnect
+  const reconnectAttempts = useRef(0);
+  const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const currentRoomRef = useRef<string>('lobby');
+  
+  // Keep currentRoomRef in sync
   useEffect(() => {
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}/ws`;
-    console.log('Connecting to', wsUrl);
-    const ws = new WebSocket(wsUrl);
-    wsRef.current = ws;
+    if (currentRoomId) {
+      // Find the slug for this room
+      const roomSlug = room?.slug || activeRooms.find(r => r.id === currentRoomId)?.slug;
+      if (roomSlug) currentRoomRef.current = roomSlug;
+    }
+  }, [currentRoomId, room, activeRooms]);
 
-    ws.onopen = () => {
-      console.log('Connected to Bottel');
-      setConnected(true);
-      ws.send(JSON.stringify({ type: 'join', roomId: 'lobby' }));
-    };
+  useEffect(() => {
+    let disposed = false;
+    
+    function connect() {
+      if (disposed) return;
+      
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsUrl = `${protocol}//${window.location.host}/ws`;
+      console.log('Connecting to', wsUrl);
+      const ws = new WebSocket(wsUrl);
+      wsRef.current = ws;
 
-    ws.onmessage = (event) => {
-      const msg: ServerMessage = JSON.parse(event.data);
-      handleMessage(msg);
-    };
+      ws.onopen = () => {
+        console.log('Connected to Bottel');
+        setConnected(true);
+        reconnectAttempts.current = 0;
+        // Rejoin the room we were in (or lobby on first connect)
+        ws.send(JSON.stringify({ type: 'join', roomId: currentRoomRef.current }));
+      };
 
-    ws.onclose = () => {
-      console.log('Disconnected');
-      setConnected(false);
-    };
+      ws.onmessage = (event) => {
+        const msg: ServerMessage = JSON.parse(event.data);
+        handleMessage(msg);
+      };
 
-    ws.onerror = (err) => {
-      console.error('WebSocket error:', err);
-    };
+      ws.onclose = () => {
+        console.log('Disconnected');
+        setConnected(false);
+        wsRef.current = null;
+        
+        if (!disposed) {
+          // Exponential backoff: 1s, 2s, 4s, 8s, max 30s
+          const delay = Math.min(1000 * Math.pow(2, reconnectAttempts.current), 30000);
+          console.log(`Reconnecting in ${delay}ms (attempt ${reconnectAttempts.current + 1})...`);
+          reconnectAttempts.current++;
+          reconnectTimer.current = setTimeout(connect, delay);
+        }
+      };
+
+      ws.onerror = (err) => {
+        console.error('WebSocket error:', err);
+      };
+    }
+    
+    connect();
 
     return () => {
-      ws.close();
+      disposed = true;
+      if (reconnectTimer.current) clearTimeout(reconnectTimer.current);
+      wsRef.current?.close();
     };
   }, []);
 
