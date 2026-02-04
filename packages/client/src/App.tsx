@@ -534,21 +534,22 @@ function App() {
           alignItems: 'center',
           gap: isMobile ? 8 : 12,
           background: isMobile ? 'rgba(0,0,0,0.8)' : 'transparent',
-          backdropFilter: isMobile ? 'blur(8px)' : 'none',
+          
         }}
       >
-        <h1 style={{ fontSize: isMobile ? 16 : 24, fontWeight: 'bold' }}>🏨 Bottel</h1>
+        <h1 style={{ fontSize: isMobile ? 12 : 18, fontWeight: 'bold', fontFamily: '"Press Start 2P", monospace', letterSpacing: 2 }}>🏨 BOTTEL</h1>
         <span
           style={{
             background: connected ? '#10B981' : '#EF4444',
             padding: '3px 8px',
-            borderRadius: 12,
-            fontSize: 11,
+            borderRadius: 0,
+            fontSize: 9,
+            fontFamily: '"Press Start 2P", monospace',
           }}
         >
           {connected ? 'LIVE' : 'OFF'}
         </span>
-        <span style={{ fontSize: 12, opacity: 0.7 }}>
+        <span style={{ fontSize: 11, opacity: 0.7 }}>
           {agents.length} AI{agents.length !== 1 ? 's' : ''}
         </span>
         {/* Room title + info button on mobile */}
@@ -598,13 +599,13 @@ function App() {
               background: botsRunning ? '#EF4444' : '#10B981',
               border: 'none',
               padding: '6px 14px',
-              borderRadius: 8,
+              borderRadius: 0,
               color: '#fff',
               fontSize: 12,
               fontWeight: 600,
               cursor: botsLoading ? 'wait' : 'pointer',
               opacity: botsLoading ? 0.7 : 1,
-              transition: 'all 0.2s',
+              
             }}
           >
             {botsLoading ? '...' : botsRunning ? '🛑 Stop Bots' : '🤖 Start Bots'}
@@ -622,12 +623,12 @@ function App() {
             right: 0,
             height: 60,
             background: 'rgba(0,0,0,0.9)',
-            backdropFilter: 'blur(8px)',
+            
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-around',
             zIndex: 20,
-            borderTop: '1px solid rgba(255,255,255,0.1)',
+            borderTop: '2px solid #333',
           }}
         >
           <button
@@ -636,7 +637,7 @@ function App() {
               background: navigatorOpen ? '#3B82F6' : 'transparent',
               border: 'none',
               padding: '10px 20px',
-              borderRadius: 8,
+              borderRadius: 0,
               color: '#fff',
               fontSize: 13,
               cursor: 'pointer',
@@ -656,7 +657,7 @@ function App() {
               background: botsRunning ? 'rgba(239,68,68,0.3)' : 'rgba(16,185,129,0.3)',
               border: 'none',
               padding: '10px 20px',
-              borderRadius: 8,
+              borderRadius: 0,
               color: '#fff',
               fontSize: 13,
               cursor: botsLoading ? 'wait' : 'pointer',
@@ -676,7 +677,7 @@ function App() {
               background: chatOpen ? '#3B82F6' : 'transparent',
               border: 'none',
               padding: '10px 20px',
-              borderRadius: 8,
+              borderRadius: 0,
               color: '#fff',
               fontSize: 13,
               cursor: 'pointer',
@@ -695,7 +696,7 @@ function App() {
               background: connectModalOpen ? '#3B82F6' : 'transparent',
               border: 'none',
               padding: '10px 20px',
-              borderRadius: 8,
+              borderRadius: 0,
               color: '#fff',
               fontSize: 13,
               cursor: 'pointer',
@@ -756,10 +757,11 @@ function App() {
                 transition: 'top 0.3s ease-out, opacity 0.3s ease-out',
                 background: 'rgba(255, 255, 255, 0.95)',
                 padding: '5px 12px 5px 6px',
-                borderRadius: 16,
-                boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                borderRadius: 0,
+                boxShadow: 'none',
+                border: '2px solid #000',
                 fontSize: 13,
-                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                fontFamily: '"IBM Plex Mono", "Courier New", monospace',
                 whiteSpace: 'normal',
                 wordBreak: 'break-word',
                 maxWidth: isMobile ? '85vw' : 400,
@@ -774,7 +776,7 @@ function App() {
                 style={{
                   width: 24,
                   height: 24,
-                  borderRadius: 6,
+                  borderRadius: 0,
                   background: bubble.bodyColor,
                   display: 'flex',
                   alignItems: 'center',
@@ -826,7 +828,7 @@ function App() {
       <Stage
         width={width}
         height={height}
-        options={{ background: 0x1a1a2e, antialias: true }}
+        options={{ background: 0x000000, antialias: true }}
       >
         {/* Room container - scaled to fit screen */}
         <Container x={offsetX} y={offsetY} scale={scale}>
@@ -845,8 +847,8 @@ function App() {
                       y={pos.y}
                       draw={(g) => {
                         g.clear();
-                        g.beginFill(isAlt ? 0x3d3d5c : 0x4a4a6a);
-                        g.lineStyle(1, 0x5a5a7a, 0.5);
+                        g.beginFill(isAlt ? 0x1a1a2e : 0x222244);
+                        g.lineStyle(1, 0x333355, 0.6);
                         g.moveTo(0, -TILE_HEIGHT / 2);
                         g.lineTo(TILE_WIDTH / 2, 0);
                         g.lineTo(0, TILE_HEIGHT / 2);
@@ -864,7 +866,7 @@ function App() {
                       y={pos.y}
                       draw={(g) => {
                         g.clear();
-                        g.beginFill(0x0d0d1a, 0.5);
+                        g.beginFill(0x080810, 0.5);
                         g.moveTo(0, -TILE_HEIGHT / 2);
                         g.lineTo(TILE_WIDTH / 2, 0);
                         g.lineTo(0, TILE_HEIGHT / 2);
@@ -938,9 +940,9 @@ function App() {
                       text={agent.name}
                       anchor={0.5}
                       style={new TextStyle({
-                        fontSize: 13,
+                        fontSize: 11,
                         fill: 0xffffff,
-                        fontFamily: 'sans-serif',
+                        fontFamily: '"IBM Plex Mono", monospace',
                         fontWeight: 'bold',
                       })}
                     />
@@ -992,15 +994,15 @@ function App() {
             bottom: chatOpen ? 320 : 16,
             right: 16,
             zIndex: 20,
-            background: 'rgba(0,0,0,0.7)',
+            background: 'rgba(0,0,0,0.9)',
             border: 'none',
             padding: '8px 12px',
-            borderRadius: 8,
+            borderRadius: 0,
             color: '#fff',
             fontSize: 12,
             cursor: 'pointer',
-            backdropFilter: 'blur(8px)',
-            transition: 'bottom 0.3s ease',
+            
+            
             display: 'flex',
             alignItems: 'center',
             gap: 6,
@@ -1021,14 +1023,14 @@ function App() {
           left: isMobile ? 0 : 'auto',
           width: isMobile ? '100%' : 320,
           maxHeight: chatOpen ? (isMobile ? '50vh' : 300) : 0,
-          background: 'rgba(0,0,0,0.85)',
+          background: 'rgba(0,0,0,0.95)',
           borderRadius: isMobile ? '16px 16px 0 0' : 12,
           padding: chatOpen ? 16 : 0,
           paddingBottom: chatOpen ? 16 : 0,
           overflowY: 'auto',
           overflowX: 'hidden',
           zIndex: 15,
-          backdropFilter: 'blur(8px)',
+          
           transition: 'max-height 0.3s ease, padding 0.3s ease',
         }}
       >
@@ -1058,7 +1060,7 @@ function App() {
                     style={{
                       width: 20,
                       height: 20,
-                      borderRadius: 4,
+                      borderRadius: 2,
                       background: bodyColor,
                       display: 'flex',
                       alignItems: 'center',
@@ -1118,15 +1120,15 @@ function App() {
             position: 'absolute',
             top: 16,
             right: 16,
-            background: 'rgba(0,0,0,0.7)',
-            borderRadius: 10,
+            background: 'rgba(0,0,0,0.9)',
+            borderRadius: 0,
             padding: '10px 14px',
             zIndex: 10,
-            backdropFilter: 'blur(8px)',
+            
             display: 'flex',
             alignItems: 'center',
             gap: 10,
-            boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+            boxShadow: 'none',
           }}
         >
           <span style={{ 
@@ -1184,11 +1186,11 @@ function App() {
               left: isMobile ? 8 : 'auto',
               width: isMobile ? 'auto' : 280,
               background: 'rgba(0,0,0,0.95)',
-              borderRadius: 12,
+              borderRadius: 0,
               padding: 16,
               zIndex: 30,
-              backdropFilter: 'blur(8px)',
-              boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
+              
+              boxShadow: 'none',
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
@@ -1230,15 +1232,15 @@ function App() {
             bottom: 16,
             left: '50%',
             transform: 'translateX(-50%)',
-            background: 'rgba(0,0,0,0.7)',
-            backdropFilter: 'blur(12px)',
-            borderRadius: 16,
+            background: 'rgba(0,0,0,0.9)',
+            
+            borderRadius: 0,
             padding: '8px 16px',
             display: 'flex',
             alignItems: 'center',
             gap: 8,
             zIndex: 20,
-            boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
+            boxShadow: 'none',
           }}
         >
           <button
@@ -1246,7 +1248,7 @@ function App() {
             style={{
               background: navigatorOpen ? 'rgba(59,130,246,0.3)' : 'transparent',
               border: 'none',
-              borderRadius: 12,
+              borderRadius: 0,
               padding: '8px 16px',
               color: '#fff',
               cursor: 'pointer',
@@ -1254,7 +1256,7 @@ function App() {
               flexDirection: 'column',
               alignItems: 'center',
               gap: 4,
-              transition: 'all 0.2s',
+              
             }}
             onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
             onMouseLeave={(e) => e.currentTarget.style.background = navigatorOpen ? 'rgba(59,130,246,0.3)' : 'transparent'}
@@ -1267,7 +1269,7 @@ function App() {
             style={{
               background: connectModalOpen ? 'rgba(59,130,246,0.3)' : 'transparent',
               border: 'none',
-              borderRadius: 12,
+              borderRadius: 0,
               padding: '8px 16px',
               color: '#fff',
               cursor: 'pointer',
@@ -1275,7 +1277,7 @@ function App() {
               flexDirection: 'column',
               alignItems: 'center',
               gap: 4,
-              transition: 'all 0.2s',
+              
             }}
             onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
             onMouseLeave={(e) => e.currentTarget.style.background = connectModalOpen ? 'rgba(59,130,246,0.3)' : 'transparent'}
@@ -1295,11 +1297,11 @@ function App() {
             right: isMobile ? 8 : 350,
             width: isMobile ? 'calc(100% - 16px)' : 280,
             background: 'rgba(0,0,0,0.95)',
-            borderRadius: 12,
+            borderRadius: 0,
             padding: 16,
             zIndex: 25,
-            backdropFilter: 'blur(8px)',
-            boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
+            
+            boxShadow: 'none',
           }}
         >
           {/* Close button */}
@@ -1328,7 +1330,7 @@ function App() {
                 width: 80,
                 height: 100,
                 background: 'rgba(255,255,255,0.1)',
-                borderRadius: 8,
+                borderRadius: 0,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -1449,7 +1451,7 @@ function App() {
           paddingTop: 16,
           overflow: 'hidden',
           zIndex: isMobile ? 15 : 25,
-          backdropFilter: 'blur(12px)',
+          
           transition: isMobile ? 'left 0.3s ease' : 'none',
           display: isMobile || navigatorOpen ? 'flex' : 'none',
           flexDirection: 'column',
@@ -1485,7 +1487,7 @@ function App() {
             style={{
               background: navigatorTab === 'popular' ? '#3B82F6' : 'rgba(255,255,255,0.1)',
               border: 'none',
-              borderRadius: 6,
+              borderRadius: 2,
               padding: '8px 12px',
               color: '#fff',
               fontSize: 12,
@@ -1500,7 +1502,7 @@ function App() {
             style={{
               background: navigatorTab === 'spectated' ? '#3B82F6' : 'rgba(255,255,255,0.1)',
               border: 'none',
-              borderRadius: 6,
+              borderRadius: 2,
               padding: '8px 12px',
               color: '#fff',
               fontSize: 12,
@@ -1515,7 +1517,7 @@ function App() {
             style={{
               background: navigatorTab === 'search' ? '#3B82F6' : 'rgba(255,255,255,0.1)',
               border: 'none',
-              borderRadius: 6,
+              borderRadius: 2,
               padding: '8px 12px',
               color: '#fff',
               fontSize: 12,
@@ -1537,7 +1539,7 @@ function App() {
             style={{
               background: 'rgba(255,255,255,0.1)',
               border: '1px solid rgba(255,255,255,0.2)',
-              borderRadius: 8,
+              borderRadius: 0,
               padding: '10px 14px',
               color: '#fff',
               fontSize: 13,
@@ -1568,8 +1570,8 @@ function App() {
               onClick={() => switchRoom(r.slug)}
               style={{
                 background: currentRoomId === r.id ? '#3B82F6' : 'rgba(255,255,255,0.1)',
-                border: currentRoomId === r.id ? '2px solid #60A5FA' : '2px solid transparent',
-                borderRadius: 8,
+                border: currentRoomId === r.id ? '2px solid #10B981' : '2px solid #222',
+                borderRadius: 0,
                 padding: '12px 14px',
                 color: '#fff',
                 fontSize: 13,
@@ -1578,16 +1580,16 @@ function App() {
                 display: 'flex',
                 flexDirection: 'column',
                 gap: 6,
-                transition: 'all 0.2s',
+                
               }}
             >
               <span style={{ fontWeight: 600 }}>{r.name}</span>
               <div style={{ display: 'flex', gap: 8 }}>
-                <span style={{ background: 'rgba(0,0,0,0.3)', padding: '2px 8px', borderRadius: 4, fontSize: 11 }}>
+                <span style={{ background: 'rgba(0,0,0,0.3)', padding: '2px 8px', borderRadius: 2, fontSize: 11 }}>
                   🤖 {r.agentCount}
                 </span>
                 {r.spectatorCount > 0 && (
-                  <span style={{ background: 'rgba(0,0,0,0.3)', padding: '2px 8px', borderRadius: 4, fontSize: 11 }}>
+                  <span style={{ background: 'rgba(0,0,0,0.3)', padding: '2px 8px', borderRadius: 2, fontSize: 11 }}>
                     👀 {r.spectatorCount}
                   </span>
                 )}
@@ -1606,8 +1608,8 @@ function App() {
               onClick={() => switchRoom(r.slug)}
               style={{
                 background: currentRoomId === r.id ? '#3B82F6' : 'rgba(255,255,255,0.1)',
-                border: currentRoomId === r.id ? '2px solid #60A5FA' : '2px solid transparent',
-                borderRadius: 8,
+                border: currentRoomId === r.id ? '2px solid #10B981' : '2px solid #222',
+                borderRadius: 0,
                 padding: '12px 14px',
                 color: '#fff',
                 fontSize: 13,
@@ -1616,15 +1618,15 @@ function App() {
                 display: 'flex',
                 flexDirection: 'column',
                 gap: 6,
-                transition: 'all 0.2s',
+                
               }}
             >
               <span style={{ fontWeight: 600 }}>{r.name}</span>
               <div style={{ display: 'flex', gap: 8 }}>
-                <span style={{ background: 'rgba(0,0,0,0.3)', padding: '2px 8px', borderRadius: 4, fontSize: 11 }}>
+                <span style={{ background: 'rgba(0,0,0,0.3)', padding: '2px 8px', borderRadius: 2, fontSize: 11 }}>
                   👀 {r.spectatorCount}
                 </span>
-                <span style={{ background: 'rgba(0,0,0,0.3)', padding: '2px 8px', borderRadius: 4, fontSize: 11 }}>
+                <span style={{ background: 'rgba(0,0,0,0.3)', padding: '2px 8px', borderRadius: 2, fontSize: 11 }}>
                   🤖 {r.agentCount}
                 </span>
               </div>
@@ -1647,8 +1649,8 @@ function App() {
               onClick={() => switchRoom(r.slug)}
               style={{
                 background: currentRoomId === r.id ? '#3B82F6' : 'rgba(255,255,255,0.1)',
-                border: currentRoomId === r.id ? '2px solid #60A5FA' : '2px solid transparent',
-                borderRadius: 8,
+                border: currentRoomId === r.id ? '2px solid #10B981' : '2px solid #222',
+                borderRadius: 0,
                 padding: '12px 14px',
                 color: '#fff',
                 fontSize: 13,
@@ -1657,7 +1659,7 @@ function App() {
                 display: 'flex',
                 flexDirection: 'column',
                 gap: 6,
-                transition: 'all 0.2s',
+                
               }}
             >
               <span style={{ fontWeight: 600 }}>{r.name}</span>
@@ -1666,7 +1668,7 @@ function App() {
                   <span style={{ opacity: 0.6, fontSize: 11 }}>by {r.ownerName}</span>
                 )}
                 {r.agentCount > 0 && (
-                  <span style={{ background: 'rgba(0,0,0,0.3)', padding: '2px 8px', borderRadius: 4, fontSize: 11 }}>
+                  <span style={{ background: 'rgba(0,0,0,0.3)', padding: '2px 8px', borderRadius: 2, fontSize: 11 }}>
                     🤖 {r.agentCount}
                   </span>
                 )}
@@ -1699,12 +1701,12 @@ function App() {
               transform: 'translate(-50%, -50%)',
               width: isMobile ? 'calc(100% - 32px)' : 520,
               maxHeight: isMobile ? 'calc(100% - 140px)' : '80vh',
-              background: '#1a1a2e',
-              borderRadius: 16,
+              background: '#000',
+              borderRadius: 0,
               padding: 0,
               zIndex: 30,
-              boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
-              border: '1px solid rgba(255,255,255,0.1)',
+              boxShadow: 'none',
+              border: '2px solid #333',
               display: 'flex',
               flexDirection: 'column',
               overflow: 'hidden',
@@ -1753,7 +1755,7 @@ function App() {
               <div style={{
                 background: 'rgba(16,185,129,0.12)',
                 border: '1px solid rgba(16,185,129,0.3)',
-                borderRadius: 12,
+                borderRadius: 0,
                 padding: 16,
                 marginBottom: 20,
               }}>
@@ -1771,7 +1773,7 @@ function App() {
                   style={{
                   background: 'rgba(0,0,0,0.4)',
                   padding: 12,
-                  borderRadius: 8,
+                  borderRadius: 0,
                   fontSize: 13,
                   cursor: 'pointer',
                   border: '1px solid rgba(255,255,255,0.2)',
@@ -1787,7 +1789,7 @@ function App() {
               <div style={{
                 background: 'rgba(59,130,246,0.12)',
                 border: '1px solid rgba(59,130,246,0.3)',
-                borderRadius: 12,
+                borderRadius: 0,
                 padding: 16,
                 marginBottom: 20,
               }}>
@@ -1805,7 +1807,7 @@ function App() {
                   style={{
                   background: 'rgba(0,0,0,0.4)',
                   padding: 12,
-                  borderRadius: 8,
+                  borderRadius: 0,
                   fontSize: 13,
                   cursor: 'pointer',
                   border: '1px solid rgba(255,255,255,0.2)',
@@ -1823,7 +1825,7 @@ function App() {
               <div style={{
                 background: 'rgba(139,92,246,0.12)',
                 border: '1px solid rgba(139,92,246,0.3)',
-                borderRadius: 12,
+                borderRadius: 0,
                 padding: 16,
                 marginBottom: 8,
               }}>
@@ -1842,7 +1844,7 @@ function App() {
                       <code style={{
                         background: 'rgba(0,0,0,0.3)',
                         padding: '3px 8px',
-                        borderRadius: 4,
+                        borderRadius: 2,
                         fontSize: 11,
                         wordBreak: 'break-all',
                       }}>{endpoint}</code>
