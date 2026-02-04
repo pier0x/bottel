@@ -293,8 +293,9 @@ class RoomManager {
       }
       room.users.delete(userId);
       
-      if (room.users.size === 0) {
-        console.log(`🚪 Unloading room ${room.room.name} (no users left)`);
+      // Only unload if no users AND no spectators
+      if (room.users.size === 0 && room.spectators.size === 0) {
+        console.log(`🚪 Unloading room ${room.room.name} (empty)`);
         this.rooms.delete(roomId);
       }
     }
@@ -475,6 +476,12 @@ class RoomManager {
     if (room) {
       room.spectators.delete(ws);
       console.log(`Spectator removed from room ${room.room.name}. Total: ${room.spectators.size}`);
+      
+      // Unload if completely empty
+      if (room.users.size === 0 && room.spectators.size === 0) {
+        console.log(`🚪 Unloading room ${room.room.name} (empty)`);
+        this.rooms.delete(roomId);
+      }
     }
   }
 
