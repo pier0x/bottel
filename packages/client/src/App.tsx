@@ -528,7 +528,10 @@ function App() {
           left: 0,
           right: 0,
           height: isMobile ? 56 : 'auto',
-          padding: isMobile ? '12px 16px' : 16,
+          paddingTop: isMobile ? 'env(safe-area-inset-top, 12px)' : 16,
+          paddingBottom: isMobile ? 8 : 16,
+          paddingLeft: 16,
+          paddingRight: 16,
           zIndex: 10,
           display: 'flex',
           alignItems: 'center',
@@ -537,7 +540,7 @@ function App() {
           
         }}
       >
-        <h1 style={{ fontSize: isMobile ? 12 : 18, fontWeight: 'bold', fontFamily: '"Press Start 2P", monospace', letterSpacing: 2 }}>🏨 BOTTEL</h1>
+        <h1 style={{ fontSize: isMobile ? 12 : 18, fontWeight: 'bold', fontFamily: '"Press Start 2P", monospace', letterSpacing: 2 }}>{isMobile ? '🏨' : '🏨 BOTTEL'}</h1>
         <span
           style={{
             background: connected ? '#10B981' : '#EF4444',
