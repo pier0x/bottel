@@ -4,12 +4,12 @@ import { TextStyle } from 'pixi.js';
 import type { ServerMessage, RoomAgent, ChatMessage, Room } from '@bottel/shared';
 import { TILE_WIDTH, TILE_HEIGHT } from '@bottel/shared';
 
-// Smooth position tracking for agents
+// Smooth position tracking for agents with path-based animation
 interface SmoothPosition {
   currentX: number;
   currentY: number;
-  targetX: number;
-  targetY: number;
+  waypoints: { x: number; y: number }[];
+  speed: number; // tiles per second
 }
 
 // Convert world coords to screen (isometric)
@@ -208,27 +208,37 @@ function App() {
   // Smooth movement animation loop
   useEffect(() => {
     let animationId: number;
-    const speed = 0.12; // Tiles per frame (~7 tiles/sec at 60fps)
+    let lastTime = performance.now();
     
-    const animate = () => {
+    const animate = (now: number) => {
+      const dt = (now - lastTime) / 1000; // delta in seconds
+      lastTime = now;
       let needsUpdate = false;
       
       smoothPositions.current.forEach((pos) => {
-        const dx = pos.targetX - pos.currentX;
-        const dy = pos.targetY - pos.currentY;
-        const distance = Math.sqrt(dx * dx + dy * dy);
+        if (pos.waypoints.length === 0) return;
         
-        // Only update if not close enough to target
-        if (distance > 0.05) {
-          // Move at constant speed in the direction of target
-          const moveAmount = Math.min(speed, distance);
-          pos.currentX += (dx / distance) * moveAmount;
-          pos.currentY += (dy / distance) * moveAmount;
+        let remaining = pos.speed * dt; // tiles to move this frame
+        
+        while (remaining > 0 && pos.waypoints.length > 0) {
+          const target = pos.waypoints[0];
+          const dx = target.x - pos.currentX;
+          const dy = target.y - pos.currentY;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          
+          if (distance <= remaining) {
+            // Reach this waypoint, move to next
+            pos.currentX = target.x;
+            pos.currentY = target.y;
+            pos.waypoints.shift();
+            remaining -= distance;
+          } else {
+            // Move toward waypoint
+            pos.currentX += (dx / distance) * remaining;
+            pos.currentY += (dy / distance) * remaining;
+            remaining = 0;
+          }
           needsUpdate = true;
-        } else {
-          // Snap to target when close enough
-          pos.currentX = pos.targetX;
-          pos.currentY = pos.targetY;
         }
       });
       
@@ -243,21 +253,15 @@ function App() {
     return () => cancelAnimationFrame(animationId);
   }, []);
 
-  // Update target positions when agents move
+  // Initialize smooth positions for new agents, clean up departed ones
   useEffect(() => {
     agents.forEach(agent => {
-      const existing = smoothPositions.current.get(agent.id);
-      if (existing) {
-        // Update target
-        existing.targetX = agent.x;
-        existing.targetY = agent.y;
-      } else {
-        // New agent - start at target position
+      if (!smoothPositions.current.has(agent.id)) {
         smoothPositions.current.set(agent.id, {
           currentX: agent.x,
           currentY: agent.y,
-          targetX: agent.x,
-          targetY: agent.y,
+          waypoints: [],
+          speed: 4,
         });
       }
     });
@@ -420,6 +424,35 @@ function App() {
             a.id === msg.agentId ? { ...a, x: msg.x, y: msg.y } : a
           )
         );
+        // Teleport smooth position (for instant moves)
+        {
+          const sp = smoothPositions.current.get(msg.agentId);
+          if (sp) {
+            sp.currentX = msg.x;
+            sp.currentY = msg.y;
+            sp.waypoints = [];
+          }
+        }
+        break;
+
+      case 'agent_path':
+        // Queue waypoints for smooth animation
+        {
+          const sp = smoothPositions.current.get(msg.agentId);
+          if (sp) {
+            sp.waypoints = [...msg.path];
+            sp.speed = msg.speed || 4;
+          }
+          // Update logical position to final destination
+          const dest = msg.path[msg.path.length - 1];
+          if (dest) {
+            setAgents((prev) =>
+              prev.map((a) =>
+                a.id === msg.agentId ? { ...a, x: dest.x, y: dest.y } : a
+              )
+            );
+          }
+        }
         break;
 
       case 'chat_message':

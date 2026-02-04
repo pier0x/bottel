@@ -81,6 +81,13 @@ export interface AgentMovedMessage {
   y: number;
 }
 
+export interface AgentPathMessage {
+  type: 'agent_path';
+  agentId: string;
+  path: { x: number; y: number }[];
+  speed: number; // tiles per second
+}
+
 export interface ChatMessageReceived {
   type: 'chat_message';
   id: string;
@@ -109,6 +116,7 @@ export type ServerMessage =
   | AgentJoinedMessage
   | AgentLeftMessage
   | AgentMovedMessage
+  | AgentPathMessage
   | ChatMessageReceived
   | ErrorMessage
   | PongMessage;

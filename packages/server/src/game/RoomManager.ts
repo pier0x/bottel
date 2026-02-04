@@ -4,6 +4,8 @@ import { MESSAGE_HISTORY_LIMIT } from '@bottel/shared';
 import { db, rooms, messages, users } from '../db/index.js';
 import { eq, desc } from 'drizzle-orm';
 
+const WALK_SPEED = 4; // tiles per second
+
 interface ConnectedUser {
   ws: WebSocket;
   userId: string;
@@ -11,9 +13,6 @@ interface ConnectedUser {
   bodyColor: string;
   x: number;
   y: number;
-  isWalking: boolean;
-  walkPath: { x: number; y: number }[];
-  walkInterval: NodeJS.Timeout | null;
 }
 
 // Simple A* pathfinding
@@ -255,9 +254,6 @@ class RoomManager {
       bodyColor,
       x: spawnPoint.x,
       y: spawnPoint.y,
-      isWalking: false,
-      walkPath: [],
-      walkInterval: null,
     };
 
     room.users.set(userId, connectedUser);
@@ -287,10 +283,6 @@ class RoomManager {
 
     const room = this.rooms.get(roomId);
     if (room) {
-      const user = room.users.get(userId);
-      if (user?.walkInterval) {
-        clearInterval(user.walkInterval);
-      }
       room.users.delete(userId);
       
       // Only unload if no users AND no spectators
@@ -314,10 +306,6 @@ class RoomManager {
     const user = room.users.get(userId);
     if (!user) return { success: false, error: 'User not found in room' };
 
-    if (user.isWalking) {
-      return { success: false, error: 'Already walking, wait until movement completes' };
-    }
-
     if (x < 0 || y < 0 || x >= room.room.width || y >= room.room.height) {
       return { success: false, error: `Position (${x},${y}) out of bounds. Room is ${room.room.width}x${room.room.height}` };
     }
@@ -336,55 +324,20 @@ class RoomManager {
       return { success: true };
     }
 
-    user.isWalking = true;
-    user.walkPath = path;
-    this.startWalking(roomId, userId);
+    // Broadcast the full path — client handles smooth animation
+    this.broadcastToRoom(roomId, {
+      type: 'agent_path',
+      agentId: userId,
+      path,
+      speed: WALK_SPEED,
+    });
+
+    // Server immediately updates to final position
+    const dest = path[path.length - 1];
+    user.x = dest.x;
+    user.y = dest.y;
 
     return { success: true };
-  }
-
-  private startWalking(roomId: string, userId: string): void {
-    const room = this.rooms.get(roomId);
-    if (!room) return;
-
-    const user = room.users.get(userId);
-    if (!user) return;
-
-    user.walkInterval = setInterval(() => {
-      if (user.walkPath.length === 0) {
-        this.stopWalking(userId);
-        return;
-      }
-
-      const nextStep = user.walkPath.shift()!;
-      user.x = nextStep.x;
-      user.y = nextStep.y;
-
-      this.broadcastToRoom(roomId, {
-        type: 'agent_moved',
-        agentId: userId,
-        x: nextStep.x,
-        y: nextStep.y,
-      });
-    }, 250);
-  }
-
-  private stopWalking(userId: string): void {
-    const roomId = this.userRooms.get(userId);
-    if (!roomId) return;
-
-    const room = this.rooms.get(roomId);
-    if (!room) return;
-
-    const user = room.users.get(userId);
-    if (!user) return;
-
-    if (user.walkInterval) {
-      clearInterval(user.walkInterval);
-      user.walkInterval = null;
-    }
-    user.isWalking = false;
-    user.walkPath = [];
   }
 
   async addMessage(userId: string, content: string): Promise<ChatMessage | null> {
