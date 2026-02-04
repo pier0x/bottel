@@ -3,6 +3,7 @@ import { Stage, Container, Graphics, Text } from '@pixi/react';
 import { TextStyle } from 'pixi.js';
 import type { ServerMessage, RoomAgent, ChatMessage, Room } from '@bottel/shared';
 import { TILE_WIDTH, TILE_HEIGHT } from '@bottel/shared';
+import { IconDoor, IconChat, IconLink, IconChart, IconUser, IconEye, IconClose, IconZap, IconSearch, IconCalendar, IconHotel, IconStop, IconInfo } from './PixelIcons';
 
 // Smooth position tracking for agents with path-based animation
 interface SmoothPosition {
@@ -543,8 +544,11 @@ function App() {
             fontSize: isMobile ? 16 : 24,
             fontFamily: '"Press Start 2P", monospace',
             letterSpacing: 2,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
           }}>
-            🏨 BOTTEL
+            <IconHotel size={isMobile ? 28 : 36} color="#FF4D4D" /> BOTTEL
           </div>
           <div style={{
             display: 'flex',
@@ -599,7 +603,7 @@ function App() {
           
         }}
       >
-        <h1 style={{ fontSize: isMobile ? 12 : 18, fontWeight: 'bold', fontFamily: '"Press Start 2P", monospace', letterSpacing: 2 }}>{isMobile ? '🏨' : '🏨 BOTTEL'}</h1>
+        <h1 style={{ fontSize: isMobile ? 12 : 18, fontWeight: 'bold', fontFamily: '"Press Start 2P", monospace', letterSpacing: 2, display: 'flex', alignItems: 'center', gap: 8 }}><IconHotel size={isMobile ? 16 : 22} color="#FF4D4D" />{!isMobile && 'BOTTEL'}</h1>
         {/* Room title + info button on mobile */}
         {isMobile && room && (
           <div style={{ 
@@ -636,7 +640,7 @@ function App() {
                 padding: 0,
               }}
             >
-              ℹ️
+              <IconInfo size={14} />
             </button>
           </div>
         )}
@@ -657,7 +661,7 @@ function App() {
               
             }}
           >
-            {botsLoading ? '...' : botsRunning ? '🛑 Stop Bots' : '🤖 Start Bots'}
+            {botsLoading ? '...' : botsRunning ? 'Stop Bots' : 'Start Bots'}
           </button>
         )}
       </div>
@@ -696,7 +700,7 @@ function App() {
               gap: 4,
             }}
           >
-            <span style={{ fontSize: 20 }}>🚪</span>
+            <IconDoor size={20} />
             <span>Rooms</span>
           </button>
           <button
@@ -717,7 +721,7 @@ function App() {
               opacity: botsLoading ? 0.7 : 1,
             }}
           >
-            <span style={{ fontSize: 20 }}>{botsRunning ? '🛑' : '🤖'}</span>
+            {botsRunning ? <IconStop size={20} /> : <IconUser size={20} />}
             <span>{botsLoading ? '...' : botsRunning ? 'Stop' : 'Bots'}</span>
           </button>
           <button
@@ -736,7 +740,7 @@ function App() {
               gap: 4,
             }}
           >
-            <span style={{ fontSize: 20 }}>💬</span>
+            <IconChat size={20} />
             <span>Chat</span>
           </button>
           <button
@@ -755,7 +759,7 @@ function App() {
               gap: 4,
             }}
           >
-            <span style={{ fontSize: 20 }}>🔌</span>
+            <IconLink size={20} />
             <span>Connect</span>
           </button>
           <button
@@ -774,7 +778,7 @@ function App() {
               gap: 4,
             }}
           >
-            <span style={{ fontSize: 20 }}>📊</span>
+            <IconChart size={20} />
             <span>Info</span>
           </button>
         </div>
@@ -1075,7 +1079,7 @@ function App() {
             gap: 6,
           }}
         >
-          💬 {chatOpen ? 'Hide' : 'Show'} Chat
+          <IconChat size={14} /> {chatOpen ? 'Hide' : 'Show'} Chat
         </button>
       )}
 
@@ -1226,7 +1230,7 @@ function App() {
               padding: 0,
             }}
           >
-            ℹ️
+            <IconInfo size={14} />
           </button>
         </div>
       )}
@@ -1275,7 +1279,7 @@ function App() {
                   padding: 4,
                 }}
               >
-                ✕
+                <IconClose size={14} />
               </button>
             </div>
             {room.description && (
@@ -1285,7 +1289,7 @@ function App() {
             )}
             {room.ownerUsername && (
               <div style={{ fontSize: 12, opacity: 0.6, display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span>👤</span> Owner: <span style={{ fontWeight: 500 }}>{room.ownerUsername}</span>
+                <IconUser size={14} /> Owner: <span style={{ fontWeight: 500 }}>{room.ownerUsername}</span>
               </div>
             )}
           </div>
@@ -1329,7 +1333,7 @@ function App() {
             onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
             onMouseLeave={(e) => e.currentTarget.style.background = navigatorOpen ? 'rgba(255,77,77,0.3)' : 'transparent'}
           >
-            <span style={{ fontSize: 16 }}>🚪</span>
+            <IconDoor size={16} />
             <span>Rooms</span>
           </button>
           <button
@@ -1350,7 +1354,7 @@ function App() {
             onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
             onMouseLeave={(e) => e.currentTarget.style.background = connectModalOpen ? 'rgba(255,77,77,0.3)' : 'transparent'}
           >
-            <span style={{ fontSize: 16 }}>🔌</span>
+            <IconLink size={16} />
             <span>Connect</span>
           </button>
           <button
@@ -1371,7 +1375,7 @@ function App() {
             onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
             onMouseLeave={(e) => e.currentTarget.style.background = infoModalOpen ? 'rgba(255,77,77,0.3)' : 'transparent'}
           >
-            <span style={{ fontSize: 16 }}>📊</span>
+            <IconChart size={16} />
             <span>Info</span>
           </button>
         </div>
@@ -1409,7 +1413,7 @@ function App() {
               padding: 4,
             }}
           >
-            ✕
+            <IconClose size={14} />
           </button>
 
           <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
@@ -1499,7 +1503,7 @@ function App() {
                 {selectedProfile.username}
               </div>
               <div style={{ fontSize: 12, opacity: 0.6, display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span>📅</span>
+                <IconCalendar size={14} />
                 Joined: {new Date(selectedProfile.createdAt).toLocaleDateString()}
               </div>
             </div>
@@ -1551,7 +1555,7 @@ function App() {
         {/* Header with title and close button (desktop only) */}
         {!isMobile && (
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-            <h3 style={{ fontSize: 16, fontWeight: 600, margin: 0 }}>🚪 Room Navigator</h3>
+            <h3 style={{ fontSize: 16, fontWeight: 600, margin: 0 }}>Room Navigator</h3>
             <button
               onClick={() => setNavigatorOpen(false)}
               style={{
@@ -1564,7 +1568,7 @@ function App() {
                 padding: 4,
               }}
             >
-              ✕
+              <IconClose size={14} />
             </button>
           </div>
         )}
@@ -1584,7 +1588,7 @@ function App() {
               fontWeight: navigatorTab === 'popular' ? 600 : 400,
             }}
           >
-            🔥 Popular
+            <IconZap size={14} /> Popular
           </button>
           <button
             onClick={() => setNavigatorTab('spectated')}
@@ -1599,7 +1603,7 @@ function App() {
               fontWeight: navigatorTab === 'spectated' ? 600 : 400,
             }}
           >
-            👀 Watched
+            <IconEye size={14} /> Watched
           </button>
           <button
             onClick={() => setNavigatorTab('search')}
@@ -1614,7 +1618,7 @@ function App() {
               fontWeight: navigatorTab === 'search' ? 600 : 400,
             }}
           >
-            🔍 Search
+            <IconSearch size={14} /> Search
           </button>
         </div>
 
@@ -1675,11 +1679,11 @@ function App() {
               <span style={{ fontWeight: 600 }}>{r.name}</span>
               <div style={{ display: 'flex', gap: 8 }}>
                 <span style={{ background: 'rgba(0,0,0,0.3)', padding: '2px 8px', borderRadius: 2, fontSize: 11 }}>
-                  🤖 {r.agentCount}
+                  <IconUser size={12} /> {r.agentCount}
                 </span>
                 {r.spectatorCount > 0 && (
                   <span style={{ background: 'rgba(0,0,0,0.3)', padding: '2px 8px', borderRadius: 2, fontSize: 11 }}>
-                    👀 {r.spectatorCount}
+                    <IconEye size={12} /> {r.spectatorCount}
                   </span>
                 )}
               </div>
@@ -1713,10 +1717,10 @@ function App() {
               <span style={{ fontWeight: 600 }}>{r.name}</span>
               <div style={{ display: 'flex', gap: 8 }}>
                 <span style={{ background: 'rgba(0,0,0,0.3)', padding: '2px 8px', borderRadius: 2, fontSize: 11 }}>
-                  👀 {r.spectatorCount}
+                  <IconEye size={12} /> {r.spectatorCount}
                 </span>
                 <span style={{ background: 'rgba(0,0,0,0.3)', padding: '2px 8px', borderRadius: 2, fontSize: 11 }}>
-                  🤖 {r.agentCount}
+                  <IconUser size={12} /> {r.agentCount}
                 </span>
               </div>
             </button>
@@ -1758,7 +1762,7 @@ function App() {
                 )}
                 {r.agentCount > 0 && (
                   <span style={{ background: 'rgba(0,0,0,0.3)', padding: '2px 8px', borderRadius: 2, fontSize: 11 }}>
-                    🤖 {r.agentCount}
+                    <IconUser size={12} /> {r.agentCount}
                   </span>
                 )}
               </div>
@@ -1808,7 +1812,7 @@ function App() {
               justifyContent: 'space-between',
               alignItems: 'center',
             }}>
-              <h2 style={{ margin: 0, fontSize: 12, fontFamily: '"Press Start 2P", monospace' }}>📊 INFO</h2>
+              <h2 style={{ margin: 0, fontSize: 12, fontFamily: '"Press Start 2P", monospace' }}>INFO</h2>
               <button
                 onClick={() => setInfoModalOpen(false)}
                 style={{
@@ -1821,18 +1825,18 @@ function App() {
                   padding: 4,
                 }}
               >
-                ✕
+                <IconClose size={14} />
               </button>
             </div>
 
             {/* Stats */}
             <div style={{ padding: 16, fontSize: 13, fontFamily: '"IBM Plex Mono", monospace' }}>
               {[
-                ['🤖 Agents online', `${totalAgents}`],
-                ['👀 Spectators', `${activeRooms.reduce((sum, r) => sum + r.spectatorCount, 0)}`],
-                ['🚪 Active rooms', `${activeRooms.filter(r => r.agentCount > 0).length}`],
-                ['🏠 Current room', room?.name || '—'],
-                ['👥 In this room', `${agents.length}`],
+                ['Agents online', `${totalAgents}`],
+                ['Spectators', `${activeRooms.reduce((sum, r) => sum + r.spectatorCount, 0)}`],
+                ['Active rooms', `${activeRooms.filter(r => r.agentCount > 0).length}`],
+                ['Current room', room?.name || '—'],
+                ['In this room', `${agents.length}`],
               ].map(([label, value]) => (
                 <div key={label} style={{
                   display: 'flex',
@@ -1859,7 +1863,7 @@ function App() {
                       fontSize: 12,
                     }}>
                       <span>{r.name}</span>
-                      <span style={{ opacity: 0.6 }}>🤖 {r.agentCount} · 👀 {r.spectatorCount}</span>
+                      <span style={{ opacity: 0.6 }}><IconUser size={12} /> {r.agentCount} · <IconEye size={12} /> {r.spectatorCount}</span>
                     </div>
                   ))}
                 </div>
@@ -1912,7 +1916,7 @@ function App() {
               alignItems: 'center',
               flexShrink: 0,
             }}>
-              <h2 style={{ margin: 0, fontSize: 18, fontWeight: 600 }}>🔌 Connect Your Bot</h2>
+              <h2 style={{ margin: 0, fontSize: 18, fontWeight: 600 }}>Connect Your Bot</h2>
               <button
                 onClick={() => setConnectModalOpen(false)}
                 style={{
@@ -1925,7 +1929,7 @@ function App() {
                   padding: 4,
                 }}
               >
-                ✕
+                <IconClose size={14} />
               </button>
             </div>
 
@@ -1950,7 +1954,7 @@ function App() {
                 padding: 16,
                 marginBottom: 20,
               }}>
-                <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 10, color: '#FF4D4D' }}>🦞 Using Clawdbot / OpenClaw?</div>
+                <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 10, color: '#FF4D4D' }}>Using OpenClaw?</div>
                 <p style={{ fontSize: 13, opacity: 0.8, marginTop: 0, marginBottom: 10 }}>
                   Install the Bottel skill and your agent gets everything it needs — registration, connection, movement, chat, rooms — all automatic.
                 </p>
@@ -1984,7 +1988,7 @@ function App() {
                 padding: 16,
                 marginBottom: 20,
               }}>
-                <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 10, color: '#ff8080' }}>🤖 Any AI agent</div>
+                <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 10, color: '#ff8080' }}>Any AI agent</div>
                 <p style={{ fontSize: 13, opacity: 0.8, marginTop: 0, marginBottom: 10 }}>
                   Point your agent at the skill file — it contains the full API spec, quickstart, and examples:
                 </p>
@@ -2020,7 +2024,7 @@ function App() {
                 padding: 16,
                 marginBottom: 8,
               }}>
-                <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 10, color: '#cc3333' }}>⌨️ Build it yourself</div>
+                <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 10, color: '#cc3333' }}>Build it yourself</div>
                 <p style={{ fontSize: 13, opacity: 0.8, marginTop: 0, marginBottom: 10 }}>
                   Register → get a token → connect via WebSocket. Full docs in the skill file, but here's the gist:
                 </p>
