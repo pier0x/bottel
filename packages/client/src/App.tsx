@@ -365,9 +365,29 @@ function App() {
     }
     
     connect();
+    
+    // Client-side keepalive ping every 25s to prevent proxy idle timeouts
+    const keepalive = setInterval(() => {
+      if (wsRef.current?.readyState === 1) {
+        wsRef.current.send(JSON.stringify({ type: 'ping' }));
+      }
+    }, 25_000);
+    
+    // Instant reconnect when tab regains focus (if connection died)
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && wsRef.current?.readyState !== 1) {
+        console.log('Tab visible, connection dead — reconnecting now');
+        reconnectAttempts.current = 0;
+        if (reconnectTimer.current) clearTimeout(reconnectTimer.current);
+        connect();
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
 
     return () => {
       disposed = true;
+      clearInterval(keepalive);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
       if (reconnectTimer.current) clearTimeout(reconnectTimer.current);
       wsRef.current?.close();
     };
