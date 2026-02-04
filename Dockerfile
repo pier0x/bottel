@@ -51,6 +51,9 @@ COPY --from=builder /app/packages/client/dist ./packages/client/dist
 # Copy drizzle migrations if they exist
 COPY --from=builder /app/packages/server/drizzle ./packages/server/drizzle
 
+# Copy public directory (skill.md etc)
+COPY --from=builder /app/packages/server/public ./packages/server/public
+
 # Copy start script
 COPY scripts/start.sh ./start.sh
 RUN chmod +x ./start.sh
