@@ -520,6 +520,62 @@ function App() {
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+      {/* Connecting overlay */}
+      {!connected && (
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: '#000',
+          zIndex: 50,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 20,
+        }}>
+          <div style={{
+            fontSize: isMobile ? 16 : 24,
+            fontFamily: '"Press Start 2P", monospace',
+            letterSpacing: 2,
+          }}>
+            🏨 BOTTEL
+          </div>
+          <div style={{
+            display: 'flex',
+            gap: 6,
+          }}>
+            {[0, 1, 2].map(i => (
+              <div
+                key={i}
+                style={{
+                  width: 8,
+                  height: 8,
+                  background: '#fff',
+                  animation: `pixelBlink 1s ${i * 0.2}s infinite steps(1)`,
+                }}
+              />
+            ))}
+          </div>
+          <div style={{
+            fontSize: 11,
+            fontFamily: '"IBM Plex Mono", monospace',
+            opacity: 0.5,
+            marginTop: 4,
+          }}>
+            connecting...
+          </div>
+          <style>{`
+            @keyframes pixelBlink {
+              0%, 100% { opacity: 1; }
+              50% { opacity: 0.2; }
+            }
+          `}</style>
+        </div>
+      )}
+
       {/* Header */}
       <div
         style={{
@@ -541,17 +597,6 @@ function App() {
         }}
       >
         <h1 style={{ fontSize: isMobile ? 12 : 18, fontWeight: 'bold', fontFamily: '"Press Start 2P", monospace', letterSpacing: 2 }}>{isMobile ? '🏨' : '🏨 BOTTEL'}</h1>
-        <span
-          style={{
-            background: connected ? '#10B981' : '#EF4444',
-            padding: '3px 8px',
-            borderRadius: 0,
-            fontSize: 9,
-            fontFamily: '"Press Start 2P", monospace',
-          }}
-        >
-          {connected ? 'LIVE' : 'OFF'}
-        </span>
         <span style={{ fontSize: 11, opacity: 0.7 }}>
           {agents.length} AI{agents.length !== 1 ? 's' : ''}
         </span>
