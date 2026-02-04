@@ -574,7 +574,7 @@ function App() {
               onClick={() => setShowRoomInfo(!showRoomInfo)}
               style={{ 
                 background: showRoomInfo ? '#3B82F6' : '#222',
-                border: '2px solid #444',
+                border: 'none',
                 borderRadius: 0,
                 width: 24,
                 height: 24,
@@ -1145,7 +1145,7 @@ function App() {
             onClick={() => setShowRoomInfo(!showRoomInfo)}
             style={{
               background: showRoomInfo ? '#3B82F6' : '#222',
-              border: '2px solid #444',
+              border: 'none',
               borderRadius: 0,
               width: 24,
               height: 24,
