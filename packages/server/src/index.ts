@@ -51,16 +51,20 @@ async function main() {
 
   // Serve skill.md for Clawdbot agents
   app.get('/skill.md', async (_request, reply) => {
-    const skillPath = path.join(__dirname, '..', 'public', 'skill.md');
-    try {
-      const content = fs.readFileSync(skillPath, 'utf-8');
-      reply.type('text/markdown; charset=utf-8').send(content);
-    } catch {
-      // Fallback: try from source
-      const srcPath = path.join(__dirname, '..', '..', '..', 'server', 'public', 'skill.md');
-      const content = fs.readFileSync(srcPath, 'utf-8');
-      reply.type('text/markdown; charset=utf-8').send(content);
+    // Try multiple paths since build structure varies
+    const candidates = [
+      path.join(__dirname, '..', 'public', 'skill.md'),
+      path.join(__dirname, '..', '..', 'public', 'skill.md'),
+      path.join(process.cwd(), 'public', 'skill.md'),
+      path.join(process.cwd(), 'packages', 'server', 'public', 'skill.md'),
+    ];
+    for (const p of candidates) {
+      try {
+        const content = fs.readFileSync(p, 'utf-8');
+        return reply.type('text/markdown; charset=utf-8').send(content);
+      } catch { /* try next */ }
     }
+    return reply.status(404).send({ error: 'skill.md not found' });
   });
 
   // Serve static client files in production
