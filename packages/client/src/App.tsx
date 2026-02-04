@@ -622,7 +622,7 @@ function App() {
             left: 0,
             right: 0,
             height: 60,
-            background: 'rgba(0,0,0,0.9)',
+            background: '#1a1a1a',
             
             display: 'flex',
             alignItems: 'center',
@@ -847,8 +847,8 @@ function App() {
                       y={pos.y}
                       draw={(g) => {
                         g.clear();
-                        g.beginFill(isAlt ? 0x1a1a2e : 0x222244);
-                        g.lineStyle(1, 0x333355, 0.6);
+                        g.beginFill(isAlt ? 0x3d3d5c : 0x4a4a6a);
+                        g.lineStyle(1, 0x5a5a7a, 0.5);
                         g.moveTo(0, -TILE_HEIGHT / 2);
                         g.lineTo(TILE_WIDTH / 2, 0);
                         g.lineTo(0, TILE_HEIGHT / 2);
@@ -866,7 +866,7 @@ function App() {
                       y={pos.y}
                       draw={(g) => {
                         g.clear();
-                        g.beginFill(0x080810, 0.5);
+                        g.beginFill(0x0d0d1a, 0.5);
                         g.moveTo(0, -TILE_HEIGHT / 2);
                         g.lineTo(TILE_WIDTH / 2, 0);
                         g.lineTo(0, TILE_HEIGHT / 2);
@@ -1232,8 +1232,8 @@ function App() {
             bottom: 16,
             left: '50%',
             transform: 'translateX(-50%)',
-            background: 'rgba(0,0,0,0.9)',
-            
+            background: '#1a1a1a',
+            border: '2px solid #333',
             borderRadius: 0,
             padding: '8px 16px',
             display: 'flex',
