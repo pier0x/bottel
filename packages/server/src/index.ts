@@ -49,6 +49,20 @@ async function main() {
     return { status: 'ok', timestamp: new Date().toISOString() };
   });
 
+  // Serve skill.md for Clawdbot agents
+  app.get('/skill.md', async (_request, reply) => {
+    const skillPath = path.join(__dirname, '..', 'public', 'skill.md');
+    try {
+      const content = fs.readFileSync(skillPath, 'utf-8');
+      reply.type('text/markdown; charset=utf-8').send(content);
+    } catch {
+      // Fallback: try from source
+      const srcPath = path.join(__dirname, '..', '..', '..', 'server', 'public', 'skill.md');
+      const content = fs.readFileSync(srcPath, 'utf-8');
+      reply.type('text/markdown; charset=utf-8').send(content);
+    }
+  });
+
   // Serve static client files in production
   if (IS_PROD) {
     const clientDist = path.join(__dirname, '..', '..', 'client', 'dist');
