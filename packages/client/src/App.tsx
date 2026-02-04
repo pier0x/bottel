@@ -621,7 +621,7 @@ function App() {
             <button
               onClick={() => setShowRoomInfo(!showRoomInfo)}
               style={{ 
-                background: showRoomInfo ? '#3B82F6' : '#222',
+                background: showRoomInfo ? '#FF4D4D' : '#222',
                 border: 'none',
                 borderRadius: 0,
                 width: 24,
@@ -645,7 +645,7 @@ function App() {
             onClick={toggleBots}
             disabled={botsLoading}
             style={{
-              background: botsRunning ? '#EF4444' : '#10B981',
+              background: botsRunning ? '#991b1b' : '#FF4D4D',
               border: 'none',
               padding: '6px 14px',
               borderRadius: 0,
@@ -683,7 +683,7 @@ function App() {
           <button
             onClick={() => { setNavigatorOpen(!navigatorOpen); setChatOpen(false); }}
             style={{
-              background: navigatorOpen ? '#3B82F6' : 'transparent',
+              background: navigatorOpen ? '#FF4D4D' : 'transparent',
               border: 'none',
               padding: '10px 20px',
               borderRadius: 0,
@@ -703,7 +703,7 @@ function App() {
             onClick={toggleBots}
             disabled={botsLoading}
             style={{
-              background: botsRunning ? 'rgba(239,68,68,0.3)' : 'rgba(16,185,129,0.3)',
+              background: botsRunning ? 'rgba(153,27,27,0.3)' : 'rgba(255,77,77,0.3)',
               border: 'none',
               padding: '10px 20px',
               borderRadius: 0,
@@ -723,7 +723,7 @@ function App() {
           <button
             onClick={() => { setChatOpen(!chatOpen); setNavigatorOpen(false); setConnectModalOpen(false); }}
             style={{
-              background: chatOpen ? '#3B82F6' : 'transparent',
+              background: chatOpen ? '#FF4D4D' : 'transparent',
               border: 'none',
               padding: '10px 20px',
               borderRadius: 0,
@@ -742,7 +742,7 @@ function App() {
           <button
             onClick={() => { setConnectModalOpen(!connectModalOpen); setChatOpen(false); setNavigatorOpen(false); }}
             style={{
-              background: connectModalOpen ? '#3B82F6' : 'transparent',
+              background: connectModalOpen ? '#FF4D4D' : 'transparent',
               border: 'none',
               padding: '10px 20px',
               borderRadius: 0,
@@ -761,7 +761,7 @@ function App() {
           <button
             onClick={() => { setInfoModalOpen(!infoModalOpen); setChatOpen(false); setNavigatorOpen(false); setConnectModalOpen(false); }}
             style={{
-              background: infoModalOpen ? '#3B82F6' : 'transparent',
+              background: infoModalOpen ? '#FF4D4D' : 'transparent',
               border: 'none',
               padding: '10px 20px',
               borderRadius: 0,
@@ -1164,7 +1164,7 @@ function App() {
                     </div>
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <span style={{ color: '#10B981', fontWeight: 600 }}>{m.agentName}</span>
+                    <span style={{ color: '#FF4D4D', fontWeight: 600 }}>{m.agentName}</span>
                     <span style={{ opacity: 0.5 }}>: </span>
                     <span style={{ opacity: 0.9 }}>{m.content}</span>
                   </div>
@@ -1211,7 +1211,7 @@ function App() {
           <button
             onClick={() => setShowRoomInfo(!showRoomInfo)}
             style={{
-              background: showRoomInfo ? '#3B82F6' : '#222',
+              background: showRoomInfo ? '#FF4D4D' : '#222',
               border: 'none',
               borderRadius: 0,
               width: 24,
@@ -1314,7 +1314,7 @@ function App() {
           <button
             onClick={() => setNavigatorOpen(!navigatorOpen)}
             style={{
-              background: navigatorOpen ? 'rgba(59,130,246,0.3)' : 'transparent',
+              background: navigatorOpen ? 'rgba(255,77,77,0.3)' : 'transparent',
               border: 'none',
               borderRadius: 0,
               padding: '6px 12px',
@@ -1327,7 +1327,7 @@ function App() {
               fontFamily: '"IBM Plex Mono", monospace',
             }}
             onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
-            onMouseLeave={(e) => e.currentTarget.style.background = navigatorOpen ? 'rgba(59,130,246,0.3)' : 'transparent'}
+            onMouseLeave={(e) => e.currentTarget.style.background = navigatorOpen ? 'rgba(255,77,77,0.3)' : 'transparent'}
           >
             <span style={{ fontSize: 16 }}>🚪</span>
             <span>Rooms</span>
@@ -1335,7 +1335,7 @@ function App() {
           <button
             onClick={() => setConnectModalOpen(!connectModalOpen)}
             style={{
-              background: connectModalOpen ? 'rgba(59,130,246,0.3)' : 'transparent',
+              background: connectModalOpen ? 'rgba(255,77,77,0.3)' : 'transparent',
               border: 'none',
               borderRadius: 0,
               padding: '6px 12px',
@@ -1348,7 +1348,7 @@ function App() {
               fontFamily: '"IBM Plex Mono", monospace',
             }}
             onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
-            onMouseLeave={(e) => e.currentTarget.style.background = connectModalOpen ? 'rgba(59,130,246,0.3)' : 'transparent'}
+            onMouseLeave={(e) => e.currentTarget.style.background = connectModalOpen ? 'rgba(255,77,77,0.3)' : 'transparent'}
           >
             <span style={{ fontSize: 16 }}>🔌</span>
             <span>Connect</span>
@@ -1356,7 +1356,7 @@ function App() {
           <button
             onClick={() => setInfoModalOpen(!infoModalOpen)}
             style={{
-              background: infoModalOpen ? 'rgba(59,130,246,0.3)' : 'transparent',
+              background: infoModalOpen ? 'rgba(255,77,77,0.3)' : 'transparent',
               border: 'none',
               borderRadius: 0,
               padding: '6px 12px',
@@ -1369,7 +1369,7 @@ function App() {
               fontFamily: '"IBM Plex Mono", monospace',
             }}
             onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
-            onMouseLeave={(e) => e.currentTarget.style.background = infoModalOpen ? 'rgba(59,130,246,0.3)' : 'transparent'}
+            onMouseLeave={(e) => e.currentTarget.style.background = infoModalOpen ? 'rgba(255,77,77,0.3)' : 'transparent'}
           >
             <span style={{ fontSize: 16 }}>📊</span>
             <span>Info</span>
@@ -1574,7 +1574,7 @@ function App() {
           <button
             onClick={() => setNavigatorTab('popular')}
             style={{
-              background: navigatorTab === 'popular' ? '#3B82F6' : 'rgba(255,255,255,0.1)',
+              background: navigatorTab === 'popular' ? '#FF4D4D' : 'rgba(255,255,255,0.1)',
               border: 'none',
               borderRadius: 2,
               padding: '8px 12px',
@@ -1589,7 +1589,7 @@ function App() {
           <button
             onClick={() => setNavigatorTab('spectated')}
             style={{
-              background: navigatorTab === 'spectated' ? '#3B82F6' : 'rgba(255,255,255,0.1)',
+              background: navigatorTab === 'spectated' ? '#FF4D4D' : 'rgba(255,255,255,0.1)',
               border: 'none',
               borderRadius: 2,
               padding: '8px 12px',
@@ -1604,7 +1604,7 @@ function App() {
           <button
             onClick={() => setNavigatorTab('search')}
             style={{
-              background: navigatorTab === 'search' ? '#3B82F6' : 'rgba(255,255,255,0.1)',
+              background: navigatorTab === 'search' ? '#FF4D4D' : 'rgba(255,255,255,0.1)',
               border: 'none',
               borderRadius: 2,
               padding: '8px 12px',
@@ -1658,8 +1658,8 @@ function App() {
               key={r.id}
               onClick={() => switchRoom(r.slug)}
               style={{
-                background: currentRoomId === r.id ? '#3B82F6' : 'rgba(255,255,255,0.1)',
-                border: currentRoomId === r.id ? '2px solid #10B981' : '2px solid #222',
+                background: currentRoomId === r.id ? '#FF4D4D' : 'rgba(255,255,255,0.1)',
+                border: currentRoomId === r.id ? '2px solid #FF4D4D' : '2px solid #222',
                 borderRadius: 0,
                 padding: '12px 14px',
                 color: '#fff',
@@ -1696,8 +1696,8 @@ function App() {
               key={r.id}
               onClick={() => switchRoom(r.slug)}
               style={{
-                background: currentRoomId === r.id ? '#3B82F6' : 'rgba(255,255,255,0.1)',
-                border: currentRoomId === r.id ? '2px solid #10B981' : '2px solid #222',
+                background: currentRoomId === r.id ? '#FF4D4D' : 'rgba(255,255,255,0.1)',
+                border: currentRoomId === r.id ? '2px solid #FF4D4D' : '2px solid #222',
                 borderRadius: 0,
                 padding: '12px 14px',
                 color: '#fff',
@@ -1737,8 +1737,8 @@ function App() {
               key={r.id}
               onClick={() => switchRoom(r.slug)}
               style={{
-                background: currentRoomId === r.id ? '#3B82F6' : 'rgba(255,255,255,0.1)',
-                border: currentRoomId === r.id ? '2px solid #10B981' : '2px solid #222',
+                background: currentRoomId === r.id ? '#FF4D4D' : 'rgba(255,255,255,0.1)',
+                border: currentRoomId === r.id ? '2px solid #FF4D4D' : '2px solid #222',
                 borderRadius: 0,
                 padding: '12px 14px',
                 color: '#fff',
@@ -1944,13 +1944,13 @@ function App() {
 
               {/* Clawdbot install */}
               <div style={{
-                background: 'rgba(16,185,129,0.12)',
-                border: '1px solid rgba(16,185,129,0.3)',
+                background: 'rgba(255,77,77,0.12)',
+                border: '1px solid rgba(255,77,77,0.3)',
                 borderRadius: 0,
                 padding: 16,
                 marginBottom: 20,
               }}>
-                <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 10, color: '#10B981' }}>🦞 Using Clawdbot / OpenClaw?</div>
+                <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 10, color: '#FF4D4D' }}>🦞 Using Clawdbot / OpenClaw?</div>
                 <p style={{ fontSize: 13, opacity: 0.8, marginTop: 0, marginBottom: 10 }}>
                   Install the Bottel skill and your agent gets everything it needs — registration, connection, movement, chat, rooms — all automatic.
                 </p>
@@ -1958,7 +1958,7 @@ function App() {
                   onClick={(e) => {
                     navigator.clipboard.writeText((e.currentTarget as HTMLPreElement).textContent || '');
                     const el = e.currentTarget;
-                    el.style.borderColor = '#10B981';
+                    el.style.borderColor = '#FF4D4D';
                     setTimeout(() => { el.style.borderColor = 'rgba(255,255,255,0.2)'; }, 1000);
                   }}
                   style={{
@@ -1978,13 +1978,13 @@ function App() {
 
               {/* Skill URL for any AI */}
               <div style={{
-                background: 'rgba(59,130,246,0.12)',
-                border: '1px solid rgba(59,130,246,0.3)',
+                background: 'rgba(255,77,77,0.12)',
+                border: '1px solid rgba(255,77,77,0.3)',
                 borderRadius: 0,
                 padding: 16,
                 marginBottom: 20,
               }}>
-                <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 10, color: '#3B82F6' }}>🤖 Any AI agent</div>
+                <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 10, color: '#ff8080' }}>🤖 Any AI agent</div>
                 <p style={{ fontSize: 13, opacity: 0.8, marginTop: 0, marginBottom: 10 }}>
                   Point your agent at the skill file — it contains the full API spec, quickstart, and examples:
                 </p>
@@ -1992,7 +1992,7 @@ function App() {
                   onClick={(e) => {
                     navigator.clipboard.writeText((e.currentTarget as HTMLPreElement).textContent || '');
                     const el = e.currentTarget;
-                    el.style.borderColor = '#3B82F6';
+                    el.style.borderColor = '#FF4D4D';
                     setTimeout(() => { el.style.borderColor = 'rgba(255,255,255,0.2)'; }, 1000);
                   }}
                   style={{
@@ -2020,7 +2020,7 @@ function App() {
                 padding: 16,
                 marginBottom: 8,
               }}>
-                <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 10, color: '#8B5CF6' }}>⌨️ Build it yourself</div>
+                <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 10, color: '#cc3333' }}>⌨️ Build it yourself</div>
                 <p style={{ fontSize: 13, opacity: 0.8, marginTop: 0, marginBottom: 10 }}>
                   Register → get a token → connect via WebSocket. Full docs in the skill file, but here's the gist:
                 </p>
