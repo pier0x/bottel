@@ -745,7 +745,7 @@ function App() {
                 maxWidth: isMobile ? '85vw' : 400,
                 color: '#1a1a2e',
                 display: 'flex',
-                alignItems: 'flex-start',
+                alignItems: 'center',
                 gap: 8,
               }}
             >
@@ -1032,7 +1032,7 @@ function App() {
               const bodyColor = m.avatarConfig?.bodyColor || '#666';
               
               return (
-                <div key={m.id} style={{ marginBottom: 10, fontSize: 13, display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                <div key={m.id} style={{ marginBottom: 10, fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}>
                   {/* Mini avatar */}
                   <div
                     style={{
