@@ -3,7 +3,7 @@ import { Stage, Container, Graphics, Text } from '@pixi/react';
 import { TextStyle } from 'pixi.js';
 import type { ServerMessage, RoomAgent, ChatMessage, Room } from '@bottel/shared';
 import { TILE_WIDTH, TILE_HEIGHT } from '@bottel/shared';
-import { IconDoor, IconChat, IconLink, IconChart, IconUser, IconEye, IconClose, IconZap, IconSearch, IconCalendar, IconHotel, IconStop, IconInfo } from './PixelIcons';
+import { IconDoor, IconChat, IconLink, IconChart, IconUser, IconEye, IconClose, IconZap, IconSearch, IconCalendar, IconHotel, IconInfo } from './PixelIcons';
 
 // Smooth position tracking for agents with path-based animation
 interface SmoothPosition {
@@ -883,6 +883,85 @@ function App() {
       >
         {/* Room container - scaled to fit screen */}
         <Container x={offsetX} y={offsetY} scale={scale}>
+          {/* Render walls (behind everything) */}
+          {room && (() => {
+            const WALL_HEIGHT = 120;
+            const wallElements: React.ReactElement[] = [];
+            
+            // Left wall (x=0 edge, going along y) — upper-left edge of diamond
+            for (let y = 0; y < room.height; y++) {
+              const pos = toScreen(0, y);
+              wallElements.push(
+                <Graphics
+                  key={`wall-left-${y}`}
+                  x={pos.x}
+                  y={pos.y}
+                  draw={(g) => {
+                    g.clear();
+                    // Wall face
+                    g.beginFill(0x2a2a44);
+                    g.moveTo(-TILE_WIDTH / 2, 0);           // bottom-left
+                    g.lineTo(0, -TILE_HEIGHT / 2);           // bottom-right
+                    g.lineTo(0, -TILE_HEIGHT / 2 - WALL_HEIGHT); // top-right
+                    g.lineTo(-TILE_WIDTH / 2, -WALL_HEIGHT); // top-left
+                    g.closePath();
+                    g.endFill();
+                    // Subtle edge line
+                    g.lineStyle(1, 0x3a3a5a, 0.5);
+                    g.moveTo(-TILE_WIDTH / 2, 0);
+                    g.lineTo(-TILE_WIDTH / 2, -WALL_HEIGHT);
+                  }}
+                />
+              );
+            }
+            
+            // Back wall (y=0 edge, going along x) — upper-right edge of diamond
+            for (let x = 0; x < room.width; x++) {
+              const pos = toScreen(x, 0);
+              wallElements.push(
+                <Graphics
+                  key={`wall-back-${x}`}
+                  x={pos.x}
+                  y={pos.y}
+                  draw={(g) => {
+                    g.clear();
+                    // Wall face (slightly lighter than left wall for depth)
+                    g.beginFill(0x33335a);
+                    g.moveTo(0, -TILE_HEIGHT / 2);           // bottom-left
+                    g.lineTo(TILE_WIDTH / 2, 0);             // bottom-right
+                    g.lineTo(TILE_WIDTH / 2, -WALL_HEIGHT);  // top-right
+                    g.lineTo(0, -TILE_HEIGHT / 2 - WALL_HEIGHT); // top-left
+                    g.closePath();
+                    g.endFill();
+                    // Subtle edge line
+                    g.lineStyle(1, 0x3a3a5a, 0.5);
+                    g.moveTo(TILE_WIDTH / 2, 0);
+                    g.lineTo(TILE_WIDTH / 2, -WALL_HEIGHT);
+                  }}
+                />
+              );
+            }
+            
+            // Corner piece where walls meet (top of tile 0,0)
+            const cornerPos = toScreen(0, 0);
+            wallElements.push(
+              <Graphics
+                key="wall-corner"
+                x={cornerPos.x}
+                y={cornerPos.y}
+                draw={(g) => {
+                  g.clear();
+                  // Vertical edge line at the corner
+                  g.lineStyle(2, 0x4a4a6a, 0.8);
+                  g.moveTo(0, -TILE_HEIGHT / 2);
+                  g.lineTo(0, -TILE_HEIGHT / 2 - WALL_HEIGHT);
+                }}
+              />
+            );
+            
+            return wallElements;
+          })()}
+
           {/* Render floor tiles */}
           {room &&
             room.tiles.map((row, y) =>
