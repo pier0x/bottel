@@ -885,81 +885,93 @@ function App() {
         <Container x={offsetX} y={offsetY} scale={scale}>
           {/* Render walls (behind everything) */}
           {room && (() => {
-            const WALL_HEIGHT = 120;
-            const wallElements: React.ReactElement[] = [];
+            const WALL_HEIGHT = 100;
+            const w = room.width;
+            const h = room.height;
             
-            // Left wall (x=0 edge, going along y) — upper-left edge of diamond
-            for (let y = 0; y < room.height; y++) {
-              const pos = toScreen(0, y);
-              wallElements.push(
-                <Graphics
-                  key={`wall-left-${y}`}
-                  x={pos.x}
-                  y={pos.y}
-                  draw={(g) => {
-                    g.clear();
-                    // Wall face
-                    g.beginFill(0x2a2a44);
-                    g.moveTo(-TILE_WIDTH / 2, 0);           // bottom-left
-                    g.lineTo(0, -TILE_HEIGHT / 2);           // bottom-right
-                    g.lineTo(0, -TILE_HEIGHT / 2 - WALL_HEIGHT); // top-right
-                    g.lineTo(-TILE_WIDTH / 2, -WALL_HEIGHT); // top-left
-                    g.closePath();
-                    g.endFill();
-                    // Subtle edge line
-                    g.lineStyle(1, 0x3a3a5a, 0.5);
-                    g.moveTo(-TILE_WIDTH / 2, 0);
-                    g.lineTo(-TILE_WIDTH / 2, -WALL_HEIGHT);
-                  }}
-                />
-              );
-            }
+            // Key room corners in screen space
+            const topCorner = toScreen(0, 0);         // top of diamond
+            const leftCorner = toScreen(0, h - 1);    // bottom-left of diamond
+            const rightCorner = toScreen(w - 1, 0);   // bottom-right of diamond
             
-            // Back wall (y=0 edge, going along x) — upper-right edge of diamond
-            for (let x = 0; x < room.width; x++) {
-              const pos = toScreen(x, 0);
-              wallElements.push(
-                <Graphics
-                  key={`wall-back-${x}`}
-                  x={pos.x}
-                  y={pos.y}
-                  draw={(g) => {
-                    g.clear();
-                    // Wall face (slightly lighter than left wall for depth)
-                    g.beginFill(0x33335a);
-                    g.moveTo(0, -TILE_HEIGHT / 2);           // bottom-left
-                    g.lineTo(TILE_WIDTH / 2, 0);             // bottom-right
-                    g.lineTo(TILE_WIDTH / 2, -WALL_HEIGHT);  // top-right
-                    g.lineTo(0, -TILE_HEIGHT / 2 - WALL_HEIGHT); // top-left
-                    g.closePath();
-                    g.endFill();
-                    // Subtle edge line
-                    g.lineStyle(1, 0x3a3a5a, 0.5);
-                    g.moveTo(TILE_WIDTH / 2, 0);
-                    g.lineTo(TILE_WIDTH / 2, -WALL_HEIGHT);
-                  }}
-                />
-              );
-            }
+            // Left wall edge points (outer edge of x=0 column)
+            const leftWallTop = { x: topCorner.x - TILE_WIDTH / 2, y: topCorner.y };
+            const leftWallBottom = { x: leftCorner.x - TILE_WIDTH / 2, y: leftCorner.y };
             
-            // Corner piece where walls meet (top of tile 0,0)
-            const cornerPos = toScreen(0, 0);
-            wallElements.push(
+            // Back wall edge points (outer edge of y=0 row)
+            const backWallTop = { x: topCorner.x, y: topCorner.y - TILE_HEIGHT / 2 };
+            const backWallRight = { x: rightCorner.x + TILE_WIDTH / 2, y: rightCorner.y };
+            
+            return (
               <Graphics
-                key="wall-corner"
-                x={cornerPos.x}
-                y={cornerPos.y}
+                key="walls"
                 draw={(g) => {
                   g.clear();
-                  // Vertical edge line at the corner
+                  
+                  // Left wall face (darker)
+                  g.beginFill(0x2a2a44);
+                  g.moveTo(leftWallBottom.x, leftWallBottom.y);                    // bottom-left
+                  g.lineTo(leftCorner.x, leftCorner.y - TILE_HEIGHT / 2);          // bottom-right (inner edge)
+                  g.lineTo(backWallTop.x, backWallTop.y);                           // top-right (inner edge, at corner)
+                  g.lineTo(backWallTop.x, backWallTop.y - WALL_HEIGHT);             // top-right raised
+                  g.lineTo(leftWallTop.x, leftWallTop.y - WALL_HEIGHT);             // top-left raised
+                  g.lineTo(leftWallBottom.x, leftWallBottom.y - WALL_HEIGHT);       // bottom-left raised
+                  g.closePath();
+                  g.endFill();
+                  
+                  // Left wall horizontal lines (brick effect)
+                  g.lineStyle(1, 0x222240, 0.4);
+                  for (let i = 1; i < Math.floor(WALL_HEIGHT / 20); i++) {
+                    const yOff = i * 20;
+                    g.moveTo(leftWallBottom.x, leftWallBottom.y - yOff);
+                    g.lineTo(leftWallTop.x, leftWallTop.y - yOff);
+                    g.lineTo(backWallTop.x, backWallTop.y - yOff);
+                  }
+                  
+                  // Back wall face (lighter for depth)
+                  g.lineStyle(0);
+                  g.beginFill(0x33335a);
+                  g.moveTo(backWallTop.x, backWallTop.y);                           // top-left (inner, at corner)
+                  g.lineTo(backWallRight.x, backWallRight.y);                        // bottom-right
+                  g.lineTo(backWallRight.x, backWallRight.y - WALL_HEIGHT);          // bottom-right raised
+                  g.lineTo(backWallTop.x, backWallTop.y - WALL_HEIGHT);              // top-left raised
+                  g.closePath();
+                  g.endFill();
+                  
+                  // Back wall horizontal lines (brick effect)
+                  g.lineStyle(1, 0x2a2a50, 0.4);
+                  for (let i = 1; i < Math.floor(WALL_HEIGHT / 20); i++) {
+                    const yOff = i * 20;
+                    g.moveTo(backWallTop.x, backWallTop.y - yOff);
+                    g.lineTo(backWallRight.x, backWallRight.y - yOff);
+                  }
+                  
+                  // Corner vertical edge
                   g.lineStyle(2, 0x4a4a6a, 0.8);
-                  g.moveTo(0, -TILE_HEIGHT / 2);
-                  g.lineTo(0, -TILE_HEIGHT / 2 - WALL_HEIGHT);
+                  g.moveTo(backWallTop.x, backWallTop.y);
+                  g.lineTo(backWallTop.x, backWallTop.y - WALL_HEIGHT);
+                  
+                  // Outer left edge
+                  g.lineStyle(1, 0x1a1a30, 0.6);
+                  g.moveTo(leftWallBottom.x, leftWallBottom.y);
+                  g.lineTo(leftWallBottom.x, leftWallBottom.y - WALL_HEIGHT);
+                  
+                  // Outer right edge
+                  g.moveTo(backWallRight.x, backWallRight.y);
+                  g.lineTo(backWallRight.x, backWallRight.y - WALL_HEIGHT);
+                  
+                  // Top edge of left wall
+                  g.lineStyle(1, 0x4a4a70, 0.5);
+                  g.moveTo(leftWallBottom.x, leftWallBottom.y - WALL_HEIGHT);
+                  g.lineTo(leftWallTop.x, leftWallTop.y - WALL_HEIGHT);
+                  g.lineTo(backWallTop.x, backWallTop.y - WALL_HEIGHT);
+                  
+                  // Top edge of back wall
+                  g.moveTo(backWallTop.x, backWallTop.y - WALL_HEIGHT);
+                  g.lineTo(backWallRight.x, backWallRight.y - WALL_HEIGHT);
                 }}
               />
             );
-            
-            return wallElements;
           })()}
 
           {/* Render floor tiles */}
