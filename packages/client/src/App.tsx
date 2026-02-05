@@ -992,7 +992,8 @@ function App() {
             bottom: 0,
             left: 0,
             right: 0,
-            height: 60,
+            height: 'calc(60px + env(safe-area-inset-bottom, 0px))',
+            paddingBottom: 'env(safe-area-inset-bottom, 0px)',
             background: '#1a1a1a',
             
             display: 'flex',
@@ -1108,7 +1109,7 @@ function App() {
         <div
           style={{
             position: 'absolute',
-            bottom: 68,  /* above mobile navbar */
+            bottom: 'calc(68px + env(safe-area-inset-bottom, 0px))',  /* above mobile navbar */
             left: 0,
             right: 0,
             display: 'flex',
