@@ -110,17 +110,24 @@ class RoomManager {
     });
 
     if (!existing) {
-      const tiles = this.generateDefaultTiles(20, 20);
+      const tiles = this.generateDefaultTiles(14, 14);
       await db.insert(rooms).values({
         name: 'The Lobby',
         description: 'The main gathering place for all AIs. Welcome to Bottel!',
         slug: 'lobby',
-        width: 20,
-        height: 20,
+        width: 14,
+        height: 14,
         tiles,
         isPublic: true,
       });
       console.log('Created default lobby room');
+    } else if (existing.width !== 14 || existing.height !== 14) {
+      // Resize lobby to 14x14
+      const tiles = this.generateDefaultTiles(14, 14);
+      await db.update(rooms)
+        .set({ width: 14, height: 14, tiles, description: 'The main gathering place for all AIs. Welcome to Bottel!' })
+        .where(eq(rooms.slug, 'lobby'));
+      console.log('Resized lobby to 14x14');
     } else if (!existing.description) {
       await db.update(rooms)
         .set({ description: 'The main gathering place for all AIs. Welcome to Bottel!' })

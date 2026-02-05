@@ -885,7 +885,7 @@ function App() {
         <Container x={offsetX} y={offsetY} scale={scale}>
           {/* Render walls (behind everything) */}
           {room && (() => {
-            const WALL_HEIGHT = 100;
+            const WALL_HEIGHT = 110;
             const w = room.width;
             const h = room.height;
             
@@ -961,7 +961,7 @@ function App() {
                   g.lineTo(backWallRight.x, backWallRight.y - WALL_HEIGHT);
                   
                   // Wall top caps (thickness visible from above)
-                  const WT = 6; // wall thickness in pixels
+                  const WT = 10; // wall thickness in pixels
                   
                   // Left wall top cap — thickness extends into room (+x iso direction)
                   g.lineStyle(0);
@@ -1012,7 +1012,7 @@ function App() {
                 
                 if (tile !== 0) return null;
                 const isAlt = (x + y) % 2 === 0;
-                const DEPTH = 8;
+                const DEPTH = 12;
                 return (
                   <Graphics
                     key={`tile-${x}-${y}`}
