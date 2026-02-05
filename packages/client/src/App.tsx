@@ -339,23 +339,21 @@ function LargeHabboAvatar({ bodyColor }: { bodyColor: string }) {
   );
 }
 
-// Habbo-style stacking chat bubbles
+// Habbo-style floating chat bubbles
 interface FloatingBubble {
   id: string;
   agentId: string;
   agentName: string;
   content: string;
-  x: number;           // Screen X position
-  slot: number;        // Stack slot (0 = bottom, increases going up)
+  x: number;           // Screen X position (room-relative, used with scale/offset)
+  y: number;           // Current absolute screen Y position (floats upward)
   timestamp: number;
-  bodyColor: string;   // Avatar body color for mini profile pic
+  bodyColor: string;
 }
 
-const BUBBLE_HEIGHT = 36;      // Height of each bubble including spacing
-const BUBBLE_BASE_Y = 220;     // Y position for slot 0 (mobile only)
-const BUBBLE_LIFETIME = 12000; // 12 seconds before disappearing
-const MAX_BUBBLES = 12;        // Max bubbles on screen
-const NAVBAR_HEIGHT = 60;      // Height of navbar area
+const BUBBLE_FLOAT_SPEED = 18; // pixels per second upward drift
+const BUBBLE_LIFETIME = 14000; // ms before removal
+const MAX_BUBBLES = 14;
 
 // Set to true to show mock bubbles for testing
 const MOCK_ENABLED = false;
@@ -610,27 +608,62 @@ function App() {
     if (MOCK_ENABLED && floatingBubbles.length === 0) {
       const now = Date.now();
       setFloatingBubbles([
-        { id: '1', agentId: 'a1', agentName: 'Alice', content: 'Hello world!', x: -100, slot: 0, timestamp: now, bodyColor: '#E74C3C' },
-        { id: '2', agentId: 'a2', agentName: 'Bob', content: 'This is a longer message to test', x: 50, slot: 1, timestamp: now - 500, bodyColor: '#3498DB' },
-        { id: '3', agentId: 'a3', agentName: 'Charlie', content: 'Hi', x: 150, slot: 2, timestamp: now - 1000, bodyColor: '#2ECC71' },
-        { id: '4', agentId: 'a4', agentName: 'Diana', content: 'Testing the bubble width!', x: -50, slot: 3, timestamp: now - 1500, bodyColor: '#9B59B6' },
+        { id: '1', agentId: 'a1', agentName: 'Alice', content: 'Hello world!', x: -100, y: 200, timestamp: now, bodyColor: '#E74C3C' },
+        { id: '2', agentId: 'a2', agentName: 'Bob', content: 'This is a longer message to test', x: 50, y: 160, timestamp: now - 500, bodyColor: '#3498DB' },
+        { id: '3', agentId: 'a3', agentName: 'Charlie', content: 'Hi', x: 150, y: 120, timestamp: now - 1000, bodyColor: '#2ECC71' },
+        { id: '4', agentId: 'a4', agentName: 'Diana', content: 'Testing the bubble width!', x: -50, y: 80, timestamp: now - 1500, bodyColor: '#9B59B6' },
       ]);
     }
   }, []);
 
-  // Manage bubble slots - remove expired and re-slot remaining
+  // Bubble physics: float upward + resolve overlaps so no two bubbles share a line
+  const bubbleHeightRef = useRef(36); // updated based on isMobile
   useEffect(() => {
-    const interval = setInterval(() => {
+    bubbleHeightRef.current = isMobile ? 26 : 36;
+  }, [isMobile]);
+
+  useEffect(() => {
+    let lastTime = performance.now();
+    let rafId: number;
+    
+    const tick = (now: number) => {
+      const dt = (now - lastTime) / 1000;
+      lastTime = now;
+      
       setFloatingBubbles(prev => {
-        const now = Date.now();
-        const active = prev.filter(b => now - b.timestamp < BUBBLE_LIFETIME);
-        // Re-assign slots based on age (newest = slot 0)
-        return active
-          .sort((a, b) => b.timestamp - a.timestamp) // Newest first
-          .map((bubble, index) => ({ ...bubble, slot: index }));
+        const currentTime = Date.now();
+        // Remove expired bubbles
+        let active = prev.filter(b => currentTime - b.timestamp < BUBBLE_LIFETIME);
+        if (active.length === 0) return active;
+        
+        // Float all bubbles upward
+        active = active.map(b => ({ ...b, y: b.y - BUBBLE_FLOAT_SPEED * dt }));
+        
+        // Sort by Y descending (lowest/newest first) to resolve overlaps bottom-up
+        active.sort((a, b) => b.y - a.y);
+        
+        // Resolve overlaps: each bubble must be at least BUBBLE_H above the one below it
+        const H = bubbleHeightRef.current;
+        for (let i = 1; i < active.length; i++) {
+          const below = active[i - 1];
+          const above = active[i];
+          const minY = below.y - H;
+          if (above.y > minY) {
+            above.y = minY; // push up
+          }
+        }
+        
+        // Remove bubbles that floated off screen (above y = -50)
+        active = active.filter(b => b.y > -50);
+        
+        return active;
       });
-    }, 100);
-    return () => clearInterval(interval);
+      
+      rafId = requestAnimationFrame(tick);
+    };
+    
+    rafId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafId);
   }, []);
 
   // Connect to WebSocket as spectator with auto-reconnect
@@ -797,20 +830,20 @@ function App() {
           if (agent) {
             const screenPos = toScreen(agent.x, agent.y);
             setFloatingBubbles(prev => {
-              // Push all existing bubbles up by incrementing their slot
-              const pushed = prev.map(b => ({ ...b, slot: b.slot + 1 }));
-              // Add new bubble at slot 0, limit total bubbles
+              // Convert room-relative to absolute screen coords
+              const absX = offsetX + (screenPos.x * scale);
+              const absY = offsetY + ((screenPos.y - 80) * scale);
               const newBubble: FloatingBubble = {
                 id: msg.id,
                 agentId: msg.agentId,
                 agentName: msg.agentName,
                 content: msg.content,
-                x: screenPos.x,
-                slot: 0,
+                x: absX,
+                y: absY,
                 timestamp: Date.now(),
                 bodyColor: msg.avatarConfig?.bodyColor || agent.avatar.bodyColor,
               };
-              return [newBubble, ...pushed].slice(0, MAX_BUBBLES);
+              return [newBubble, ...prev].slice(0, MAX_BUBBLES);
             });
           }
           return currentAgents;
@@ -838,8 +871,6 @@ function App() {
     : height - scaledRoomHeight - 40;           // Desktop: near bottom with 40px margin
   
   // Bubble base Y - relative to room position (more gap on desktop)
-  const bubbleBaseY = isMobile ? BUBBLE_BASE_Y : offsetY - 100;
-
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
       {/* Connecting overlay */}
@@ -1103,123 +1134,72 @@ function App() {
         </div>
       )}
 
-      {/* Chat bubbles overlay (HTML for better text rendering) */}
-      {/* Chat bubbles — stacked from room top, newest at bottom */}
+      {/* Habbo-style floating chat bubbles — spawn above agents, float up, fade out */}
       <div
         style={{
           position: 'absolute',
           top: 0,
           left: 0,
           width: '100%',
-          height: isMobile ? '100%' : bubbleBaseY + 50,
+          height: '100%',
           pointerEvents: 'none',
           overflow: 'hidden',
           zIndex: 5,
         }}
       >
-        {(() => {
-          // On mobile: stack as a column near the room top area
-          // On desktop: absolute position at room coordinates
-          const mobileBubbleTop = offsetY - 60; // start just above the room
-          const MOBILE_LINE_H = 28; // height per bubble line on mobile
+        {floatingBubbles.map((bubble) => {
+          const cleanName = bubble.agentName.replace(/[\u{1F600}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F900}-\u{1F9FF}\u{1F1E0}-\u{1F1FF}]/gu, '').trim();
           
-          return floatingBubbles
-            .slice()
-            .sort((a, b) => a.timestamp - b.timestamp) // oldest first (top), newest last (bottom)
-            .map((bubble, index) => {
-              const cleanName = bubble.agentName.replace(/[\u{1F600}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F900}-\u{1F9FF}\u{1F1E0}-\u{1F1FF}]/gu, '').trim();
-              
-              if (isMobile) {
-                // Mobile: stack in a centered column from room top, going up
-                const y = mobileBubbleTop - (index * MOBILE_LINE_H);
-                
-                // Fade near top of screen
-                const fadeStartY = 80;
-                const fadeEndY = 40;
-                let opacity = 1;
-                if (y < fadeStartY) {
-                  opacity = Math.max(0, (y - fadeEndY) / (fadeStartY - fadeEndY));
-                }
-                if (opacity <= 0) return null;
-                
-                return (
-                  <div
-                    key={bubble.id}
-                    style={{
-                      position: 'absolute',
-                      left: '50%',
-                      top: y,
-                      transform: 'translateX(-50%)',
-                      opacity,
-                      transition: 'top 0.3s ease-out, opacity 0.3s ease-out',
-                      background: 'rgba(255, 255, 255, 0.95)',
-                      padding: '3px 8px 3px 4px',
-                      border: '2px solid #000',
-                      fontSize: 11,
-                      fontFamily: '"IBM Plex Mono", "Courier New", monospace',
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      maxWidth: '88vw',
-                      color: '#1a1a2e',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 5,
-                    }}
-                  >
-                    <MiniHabboAvatar bodyColor={bubble.bodyColor} size={18} />
-                    <span style={{ fontWeight: 600, flexShrink: 0 }}>{cleanName}:</span>
-                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{bubble.content}</span>
-                  </div>
-                );
-              } else {
-                // Desktop: absolute position at room screen coordinates
-                const y = bubbleBaseY - (bubble.slot * BUBBLE_HEIGHT);
-                
-                const fadeStartY = 100;
-                const fadeEndY = NAVBAR_HEIGHT;
-                let opacity = 1;
-                if (y < fadeStartY) {
-                  opacity = Math.max(0, (y - fadeEndY) / (fadeStartY - fadeEndY));
-                }
-                
-                const screenX = offsetX + (bubble.x * scale);
-                if (opacity <= 0) return null;
-                
-                return (
-                  <div
-                    key={bubble.id}
-                    style={{
-                      position: 'absolute',
-                      left: screenX,
-                      top: y,
-                      transform: 'translateX(-50%)',
-                      opacity,
-                      transition: 'top 0.3s ease-out, opacity 0.3s ease-out',
-                      background: 'rgba(255, 255, 255, 0.95)',
-                      padding: '5px 12px 5px 6px',
-                      border: '2px solid #000',
-                      fontSize: 13,
-                      fontFamily: '"IBM Plex Mono", "Courier New", monospace',
-                      whiteSpace: 'normal',
-                      wordBreak: 'break-word',
-                      maxWidth: 400,
-                      color: '#1a1a2e',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 8,
-                    }}
-                  >
-                    <MiniHabboAvatar bodyColor={bubble.bodyColor} size={24} />
-                    <div>
-                      <span style={{ fontWeight: 600 }}>{cleanName}:</span>{' '}
-                      <span>{bubble.content}</span>
-                    </div>
-                  </div>
-                );
-              }
-            });
-        })()}
+          // Bubble coords are already absolute screen pixels
+          const screenX = isMobile ? width / 2 : bubble.x;
+          const screenY = bubble.y;
+          
+          // Fade out near top of screen
+          const fadeStart = isMobile ? 100 : 120;
+          const fadeEnd = isMobile ? 30 : 50;
+          let opacity = 1;
+          if (screenY < fadeStart) {
+            opacity = Math.max(0, (screenY - fadeEnd) / (fadeStart - fadeEnd));
+          }
+          // Also fade based on age (last 25% of lifetime)
+          const age = Date.now() - bubble.timestamp;
+          const ageFade = age > BUBBLE_LIFETIME * 0.75
+            ? 1 - (age - BUBBLE_LIFETIME * 0.75) / (BUBBLE_LIFETIME * 0.25)
+            : 1;
+          opacity = Math.min(opacity, ageFade);
+          
+          if (opacity <= 0) return null;
+          
+          return (
+            <div
+              key={bubble.id}
+              style={{
+                position: 'absolute',
+                left: screenX,
+                top: screenY,
+                transform: 'translateX(-50%)',
+                opacity,
+                background: 'rgba(255, 255, 255, 0.95)',
+                padding: isMobile ? '3px 8px 3px 4px' : '5px 12px 5px 6px',
+                border: '2px solid #000',
+                fontSize: isMobile ? 11 : 13,
+                fontFamily: '"IBM Plex Mono", "Courier New", monospace',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                maxWidth: isMobile ? '88vw' : 400,
+                color: '#1a1a2e',
+                display: 'flex',
+                alignItems: 'center',
+                gap: isMobile ? 5 : 8,
+              }}
+            >
+              <MiniHabboAvatar bodyColor={bubble.bodyColor} size={isMobile ? 18 : 24} />
+              <span style={{ fontWeight: 600, flexShrink: 0 }}>{cleanName}:</span>
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{bubble.content}</span>
+            </div>
+          );
+        })}
       </div>
 
       {/* PixiJS Canvas */}
