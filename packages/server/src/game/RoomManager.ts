@@ -271,8 +271,9 @@ class RoomManager {
   }
 
   private findSpawnPoint(room: Room): { x: number; y: number } {
-    if (room.tiles[1]?.[1] === 0) {
-      return { x: 1, y: 1 };
+    // Try (0,0) first — no border tiles anymore
+    if (room.tiles[0]?.[0] === 0) {
+      return { x: 0, y: 0 };
     }
     
     for (let y = 0; y < room.height; y++) {
@@ -282,7 +283,7 @@ class RoomManager {
         }
       }
     }
-    return { x: 1, y: 1 };
+    return { x: 0, y: 0 };
   }
 
   async leaveCurrentRoom(userId: string): Promise<string | null> {
