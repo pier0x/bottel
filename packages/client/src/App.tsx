@@ -21,6 +21,118 @@ function toScreen(x: number, y: number): { x: number; y: number } {
   };
 }
 
+// Color manipulation helpers for Habbo-style avatars
+function darkenColor(c: number, amount: number): number {
+  const r = Math.max(0, ((c >> 16) & 0xFF) * (1 - amount));
+  const g = Math.max(0, ((c >> 8) & 0xFF) * (1 - amount));
+  const b = Math.max(0, (c & 0xFF) * (1 - amount));
+  return (Math.floor(r) << 16) | (Math.floor(g) << 8) | Math.floor(b);
+}
+function lightenColor(c: number, amount: number): number {
+  const r = Math.min(255, ((c >> 16) & 0xFF) + (255 - ((c >> 16) & 0xFF)) * amount);
+  const g = Math.min(255, ((c >> 8) & 0xFF) + (255 - ((c >> 8) & 0xFF)) * amount);
+  const b = Math.min(255, (c & 0xFF) + (255 - (c & 0xFF)) * amount);
+  return (Math.floor(r) << 16) | (Math.floor(g) << 8) | Math.floor(b);
+}
+
+// Habbo-style pixel art avatar renderer
+// Draws a blocky isometric character with the given body color
+// Origin (0,0) = shadow center / feet position
+function drawHabboAvatar(g: import('pixi.js').Graphics, bodyColorHex: string) {
+  const PX = 2; // each design pixel = 2x2 screen pixels
+  const color = parseInt(bodyColorHex.slice(1), 16);
+  const bodyDark = darkenColor(color, 0.35);
+  const bodyLight = lightenColor(color, 0.15);
+  const skin = 0xEAC4A0;
+  const skinShade = 0xD4A878;
+  const hair = 0x3D2B1F;
+  const outline = 0x1A1A2E;
+  const white = 0xFFFFFF;
+
+  g.clear();
+
+  // --- Shadow ---
+  g.beginFill(0x000000, 0.25);
+  g.drawEllipse(0, 0, 13, 5);
+  g.endFill();
+
+  // Helper: filled rect in PX units, y goes up (negative = up)
+  const px = (x: number, y: number, w: number, h: number, c: number) => {
+    g.beginFill(c);
+    g.drawRect(x * PX, y * PX, w * PX, h * PX);
+    g.endFill();
+  };
+
+  // --- Shoes (bottom) ---
+  px(-6, -2, 4, 2, outline);     // left shoe
+  px(1, -2, 4, 2, outline);      // right shoe
+
+  // --- Legs (pants) ---
+  px(-5, -8, 3, 6, bodyDark);    // left leg
+  px(1, -8, 3, 6, bodyDark);     // right leg
+  // Leg outline
+  px(-6, -8, 1, 6, outline);     // left leg outer
+  px(4, -8, 1, 6, outline);      // right leg outer
+
+  // --- Belt ---
+  px(-6, -9, 11, 1, darkenColor(color, 0.5));
+
+  // --- Body (shirt) ---
+  px(-6, -18, 11, 9, color);
+  // Shirt highlight (3/4 lighting)
+  px(-4, -17, 3, 3, bodyLight);
+  // Shirt shadow (right side)
+  px(3, -17, 2, 8, darkenColor(color, 0.15));
+  // Body outline
+  px(-7, -18, 1, 10, outline);   // left edge
+  px(5, -18, 1, 10, outline);    // right edge
+  px(-6, -19, 11, 1, outline);   // top edge
+
+  // --- Arms (skin colored, at sides) ---
+  px(-9, -17, 2, 8, skin);       // left arm
+  px(6, -17, 2, 8, skin);        // right arm
+  // Hands
+  px(-9, -9, 2, 2, skin);        // left hand
+  px(6, -9, 2, 2, skin);         // right hand
+  // Arm outlines
+  px(-10, -17, 1, 10, outline);
+  px(8, -17, 1, 10, outline);
+
+  // --- Neck ---
+  px(-2, -21, 3, 2, skin);
+
+  // --- Head ---
+  px(-6, -30, 11, 9, skin);
+  // Head shadow (right side for 3/4 depth)
+  px(3, -29, 2, 7, skinShade);
+  // Head outline
+  px(-7, -30, 1, 9, outline);    // left
+  px(5, -30, 1, 9, outline);     // right
+  px(-6, -31, 11, 1, outline);   // top
+  px(-6, -21, 11, 1, outline);   // bottom (jaw)
+  // Chin curve
+  px(-6, -22, 1, 1, outline);
+  px(4, -22, 1, 1, outline);
+
+  // --- Hair ---
+  px(-6, -34, 12, 4, hair);      // hair top block
+  px(-7, -33, 1, 5, hair);       // hair left side
+  px(6, -33, 1, 3, hair);        // hair right side
+  // Hair highlight
+  px(-4, -33, 3, 1, lightenColor(hair, 0.25));
+
+  // --- Eyes ---
+  // Left eye: white + pupil
+  px(-4, -27, 2, 2, white);
+  px(-3, -27, 1, 2, outline);    // pupil
+  // Right eye: white + pupil
+  px(1, -27, 2, 2, white);
+  px(2, -27, 1, 2, outline);     // pupil
+
+  // --- Mouth ---
+  px(-2, -24, 3, 1, skinShade);
+}
+
 // Habbo-style stacking chat bubbles
 interface FloatingBubble {
   id: string;
@@ -1071,42 +1183,24 @@ function App() {
                 <Container 
                   key={agent.id} 
                   x={pos.x} 
-                  y={pos.y - 15}
+                  y={pos.y}
                   eventMode="static"
                   cursor="pointer"
                   pointerdown={() => showProfile(agent.id)}
                 >
+                  {/* Habbo-style pixel art avatar */}
                   <Graphics
-                    draw={(g) => {
-                      g.clear();
-                      const color = parseInt(agent.avatar.bodyColor.slice(1), 16);
-                      // Shadow
-                      g.beginFill(0x000000, 0.3);
-                      g.drawEllipse(0, 15, 21, 9);
-                      g.endFill();
-                      // Body
-                      g.beginFill(color);
-                      g.drawEllipse(0, -12, 21, 27);
-                      g.endFill();
-                      // Head
-                      g.beginFill(0xfcd5b8);
-                      g.drawCircle(0, -48, 18);
-                      g.endFill();
-                      // Eyes
-                      g.beginFill(0x333333);
-                      g.drawCircle(-6, -50, 3);
-                      g.drawCircle(6, -50, 3);
-                      g.endFill();
-                    }}
+                    draw={(g) => drawHabboAvatar(g, agent.avatar.bodyColor)}
                   />
                   
-                  <Container y={-78}>
+                  {/* Name label */}
+                  <Container y={-72}>
                     <Graphics
                       draw={(g) => {
                         g.clear();
-                        const nameWidth = agent.name.length * 8 + 16;
-                        g.beginFill(0x000000, 0.7);
-                        g.drawRoundedRect(-nameWidth / 2, -12, nameWidth, 22, 5);
+                        const nameWidth = agent.name.length * 7 + 14;
+                        g.beginFill(0x000000, 0.75);
+                        g.drawRect(-nameWidth / 2, -10, nameWidth, 18);
                         g.endFill();
                       }}
                     />
@@ -1114,9 +1208,9 @@ function App() {
                       text={agent.name}
                       anchor={0.5}
                       style={new TextStyle({
-                        fontSize: 11,
+                        fontSize: 10,
                         fill: 0xffffff,
-                        fontFamily: '"IBM Plex Mono", monospace',
+                        fontFamily: '"Press Start 2P", "IBM Plex Mono", monospace',
                         fontWeight: 'bold',
                       })}
                     />
@@ -1124,31 +1218,16 @@ function App() {
                   
                   {/* Selection arrow indicator */}
                   {isSelected && (
-                    <Container y={-105}>
+                    <Container y={-90}>
                       <Graphics
                         draw={(g) => {
                           g.clear();
-                          // Arrow pointing down
+                          // Pixel art arrow pointing down
                           g.beginFill(0x3B82F6);
-                          g.moveTo(0, 12);      // bottom point
-                          g.lineTo(-10, -4);    // top left
-                          g.lineTo(-4, -4);     // inner left
-                          g.lineTo(-4, -12);    // top left corner
-                          g.lineTo(4, -12);     // top right corner
-                          g.lineTo(4, -4);      // inner right
-                          g.lineTo(10, -4);     // top right
-                          g.closePath();
+                          g.drawRect(-6, -8, 12, 4);  // top bar
+                          g.drawRect(-4, -4, 8, 4);   // middle
+                          g.drawRect(-2, 0, 4, 4);    // bottom point
                           g.endFill();
-                          // White border
-                          g.lineStyle(2, 0xffffff, 1);
-                          g.moveTo(0, 12);
-                          g.lineTo(-10, -4);
-                          g.lineTo(-4, -4);
-                          g.lineTo(-4, -12);
-                          g.lineTo(4, -12);
-                          g.lineTo(4, -4);
-                          g.lineTo(10, -4);
-                          g.closePath();
                         }}
                       />
                     </Container>
