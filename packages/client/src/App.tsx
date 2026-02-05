@@ -830,9 +830,9 @@ function App() {
           if (agent) {
             const screenPos = toScreen(agent.x, agent.y);
             setFloatingBubbles(prev => {
-              // Convert room-relative to absolute screen coords
+              // X: above agent's position; Y: at room top edge (above the room)
               const absX = offsetX + (screenPos.x * scale);
-              const absY = offsetY + ((screenPos.y - 80) * scale);
+              const absY = offsetY - 40;
               const newBubble: FloatingBubble = {
                 id: msg.id,
                 agentId: msg.agentId,
