@@ -590,9 +590,9 @@ function App() {
           top: 0,
           left: 0,
           right: 0,
-          height: isMobile ? 'calc(48px + env(safe-area-inset-top, 16px))' : 'auto',
-          paddingTop: isMobile ? 'calc(env(safe-area-inset-top, 16px) + 4px)' : 16,
-          paddingBottom: isMobile ? 8 : 16,
+          height: isMobile ? 'auto' : 'auto',
+          paddingTop: isMobile ? 'max(env(safe-area-inset-top, 0px), 48px)' : 16,
+          paddingBottom: isMobile ? 10 : 16,
           paddingLeft: 16,
           paddingRight: 16,
           zIndex: 10,
@@ -1532,7 +1532,7 @@ function App() {
           position: 'absolute',
           // Mobile: sidebar from left
           // Desktop: centered modal
-          top: isMobile ? 'calc(48px + env(safe-area-inset-top, 16px))' : '50%',
+          top: isMobile ? 'calc(max(env(safe-area-inset-top, 0px), 48px) + 40px)' : '50%',
           left: isMobile ? (navigatorOpen ? 0 : -280) : '50%',
           bottom: isMobile ? 60 : 'auto',
           transform: isMobile ? 'none' : 'translate(-50%, -50%)',
