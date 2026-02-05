@@ -980,48 +980,26 @@ function App() {
               row.map((tile, x) => {
                 const pos = toScreen(x, y);
                 
-                if (tile === 0) {
-                  const isAlt = (x + y) % 2 === 0;
-                  return (
-                    <Graphics
-                      key={`tile-${x}-${y}`}
-                      x={pos.x}
-                      y={pos.y}
-                      draw={(g) => {
-                        g.clear();
-                        g.beginFill(isAlt ? 0x5c5c8a : 0x6a6a9a);
-                        g.lineStyle(1, 0x7a7aaa, 0.5);
-                        g.moveTo(0, -TILE_HEIGHT / 2);
-                        g.lineTo(TILE_WIDTH / 2, 0);
-                        g.lineTo(0, TILE_HEIGHT / 2);
-                        g.lineTo(-TILE_WIDTH / 2, 0);
-                        g.closePath();
-                        g.endFill();
-                      }}
-                    />
-                  );
-                } else {
-                  return (
-                    <Graphics
-                      key={`tile-${x}-${y}`}
-                      x={pos.x}
-                      y={pos.y}
-                      draw={(g) => {
-                        g.clear();
-                        // Border tiles: darker floor edge visible against black bg
-                        const edgeAlt = (x + y) % 2 === 0;
-                        g.beginFill(edgeAlt ? 0x3a3a5e : 0x444470);
-                        g.lineStyle(1, 0x50507a, 0.4);
-                        g.moveTo(0, -TILE_HEIGHT / 2);
-                        g.lineTo(TILE_WIDTH / 2, 0);
-                        g.lineTo(0, TILE_HEIGHT / 2);
-                        g.lineTo(-TILE_WIDTH / 2, 0);
-                        g.closePath();
-                        g.endFill();
-                      }}
-                    />
-                  );
-                }
+                if (tile !== 0) return null;
+                const isAlt = (x + y) % 2 === 0;
+                return (
+                  <Graphics
+                    key={`tile-${x}-${y}`}
+                    x={pos.x}
+                    y={pos.y}
+                    draw={(g) => {
+                      g.clear();
+                      g.beginFill(isAlt ? 0x5c5c8a : 0x6a6a9a);
+                      g.lineStyle(1, 0x7a7aaa, 0.5);
+                      g.moveTo(0, -TILE_HEIGHT / 2);
+                      g.lineTo(TILE_WIDTH / 2, 0);
+                      g.lineTo(0, TILE_HEIGHT / 2);
+                      g.lineTo(-TILE_WIDTH / 2, 0);
+                      g.closePath();
+                      g.endFill();
+                    }}
+                  />
+                );
               })
             )}
 

@@ -42,11 +42,7 @@ function generateDefaultTiles(width: number, height: number): number[][] {
   for (let y = 0; y < height; y++) {
     const row: number[] = [];
     for (let x = 0; x < width; x++) {
-      if (x === 0 || y === 0 || x === width - 1 || y === height - 1) {
-        row.push(1); // blocked border
-      } else {
-        row.push(0); // walkable
-      }
+      row.push(0); // all walkable — walls define boundary
     }
     tiles.push(row);
   }

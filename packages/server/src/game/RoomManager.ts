@@ -129,16 +129,17 @@ class RoomManager {
     }
   }
 
+  // Strip legacy blocked borders — all edge tiles become walkable
+  private ensureNoBorder(tiles: number[][]): number[][] {
+    return tiles.map(row => row.map(() => 0));
+  }
+
   private generateDefaultTiles(width: number, height: number): number[][] {
     const tiles: number[][] = [];
     for (let y = 0; y < height; y++) {
       const row: number[] = [];
       for (let x = 0; x < width; x++) {
-        if (x === 0 || y === 0 || x === width - 1 || y === height - 1) {
-          row.push(1);
-        } else {
-          row.push(0);
-        }
+        row.push(0);
       }
       tiles.push(row);
     }
@@ -209,7 +210,7 @@ class RoomManager {
       ownerUsername,
       width: roomData.width,
       height: roomData.height,
-      tiles: roomData.tiles || this.generateDefaultTiles(roomData.width, roomData.height),
+      tiles: this.ensureNoBorder(roomData.tiles || this.generateDefaultTiles(roomData.width, roomData.height)),
       createdAt: roomData.createdAt,
       isPublic: roomData.isPublic,
     };

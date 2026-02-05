@@ -86,17 +86,12 @@ export async function roomRoutes(app: FastifyInstance): Promise<void> {
     // Generate unique slug
     const slug = generateSlug(name);
 
-    // Generate floor tiles (0 = walkable, 1 = blocked border)
+    // Generate floor tiles (all walkable — walls define boundary)
     const tiles: number[][] = [];
     for (let y = 0; y < height; y++) {
       const row: number[] = [];
       for (let x = 0; x < width; x++) {
-        // Block edges for a room feel
-        if (x === 0 || y === 0 || x === width - 1 || y === height - 1) {
-          row.push(1);
-        } else {
-          row.push(0);
-        }
+        row.push(0);
       }
       tiles.push(row);
     }
