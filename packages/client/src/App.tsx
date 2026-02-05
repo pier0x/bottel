@@ -704,27 +704,6 @@ function App() {
             <span>Rooms</span>
           </button>
           <button
-            onClick={toggleBots}
-            disabled={botsLoading}
-            style={{
-              background: botsRunning ? 'rgba(153,27,27,0.3)' : 'rgba(255,77,77,0.3)',
-              border: 'none',
-              padding: '10px 20px',
-              borderRadius: 0,
-              color: '#fff',
-              fontSize: 13,
-              cursor: botsLoading ? 'wait' : 'pointer',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: 4,
-              opacity: botsLoading ? 0.7 : 1,
-            }}
-          >
-            {botsRunning ? <IconStop size={20} /> : <IconUser size={20} />}
-            <span>{botsLoading ? '...' : botsRunning ? 'Stop' : 'Bots'}</span>
-          </button>
-          <button
             onClick={() => { setChatOpen(!chatOpen); setNavigatorOpen(false); setConnectModalOpen(false); }}
             style={{
               background: chatOpen ? '#FF4D4D' : 'transparent',
