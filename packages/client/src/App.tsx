@@ -960,21 +960,51 @@ function App() {
                   g.moveTo(backWallRight.x, backWallRight.y);
                   g.lineTo(backWallRight.x, backWallRight.y - WALL_HEIGHT);
                   
-                  // Top edge of left wall
+                  // Wall top caps (thickness visible from above)
+                  const WT = 6; // wall thickness in pixels
+                  
+                  // Left wall top cap — thickness extends into room (+x iso direction)
+                  g.lineStyle(0);
+                  g.beginFill(0x3a3a60);
+                  g.moveTo(leftWallBottom.x, leftWallBottom.y - WALL_HEIGHT);
+                  g.lineTo(leftWallTop.x, leftWallTop.y - WALL_HEIGHT);
+                  g.lineTo(backWallTop.x, backWallTop.y - WALL_HEIGHT);
+                  g.lineTo(backWallTop.x + WT, backWallTop.y - WALL_HEIGHT + WT / 2);
+                  g.lineTo(leftWallTop.x + WT, leftWallTop.y - WALL_HEIGHT + WT / 2);
+                  g.lineTo(leftWallBottom.x + WT, leftWallBottom.y - WALL_HEIGHT + WT / 2);
+                  g.closePath();
+                  g.endFill();
+                  
+                  // Back wall top cap — thickness extends into room (+y iso direction)
+                  g.beginFill(0x444478);
+                  g.moveTo(backWallTop.x, backWallTop.y - WALL_HEIGHT);
+                  g.lineTo(backWallRight.x, backWallRight.y - WALL_HEIGHT);
+                  g.lineTo(backWallRight.x - WT, backWallRight.y - WALL_HEIGHT + WT / 2);
+                  g.lineTo(backWallTop.x - WT, backWallTop.y - WALL_HEIGHT + WT / 2);
+                  g.closePath();
+                  g.endFill();
+                  
+                  // Corner cap piece where walls meet
+                  g.beginFill(0x4a4a80);
+                  g.moveTo(backWallTop.x, backWallTop.y - WALL_HEIGHT);
+                  g.lineTo(backWallTop.x + WT, backWallTop.y - WALL_HEIGHT + WT / 2);
+                  g.lineTo(backWallTop.x, backWallTop.y - WALL_HEIGHT + WT);
+                  g.lineTo(backWallTop.x - WT, backWallTop.y - WALL_HEIGHT + WT / 2);
+                  g.closePath();
+                  g.endFill();
+                  
+                  // Top edge outlines
                   g.lineStyle(1, 0x4a4a70, 0.5);
                   g.moveTo(leftWallBottom.x, leftWallBottom.y - WALL_HEIGHT);
                   g.lineTo(leftWallTop.x, leftWallTop.y - WALL_HEIGHT);
                   g.lineTo(backWallTop.x, backWallTop.y - WALL_HEIGHT);
-                  
-                  // Top edge of back wall
-                  g.moveTo(backWallTop.x, backWallTop.y - WALL_HEIGHT);
                   g.lineTo(backWallRight.x, backWallRight.y - WALL_HEIGHT);
                 }}
               />
             );
           })()}
 
-          {/* Render floor tiles */}
+          {/* Render floor tiles with 3D depth */}
           {room &&
             room.tiles.map((row, y) =>
               row.map((tile, x) => {
@@ -982,6 +1012,7 @@ function App() {
                 
                 if (tile !== 0) return null;
                 const isAlt = (x + y) % 2 === 0;
+                const DEPTH = 8;
                 return (
                   <Graphics
                     key={`tile-${x}-${y}`}
@@ -989,8 +1020,28 @@ function App() {
                     y={pos.y}
                     draw={(g) => {
                       g.clear();
+                      
+                      // Left side face (south-west, darkest)
+                      g.beginFill(isAlt ? 0x2e2e55 : 0x383868);
+                      g.moveTo(-TILE_WIDTH / 2, 0);
+                      g.lineTo(0, TILE_HEIGHT / 2);
+                      g.lineTo(0, TILE_HEIGHT / 2 + DEPTH);
+                      g.lineTo(-TILE_WIDTH / 2, DEPTH);
+                      g.closePath();
+                      g.endFill();
+                      
+                      // Right side face (south-east, medium dark)
+                      g.beginFill(isAlt ? 0x3d3d6a : 0x4a4a7a);
+                      g.moveTo(TILE_WIDTH / 2, 0);
+                      g.lineTo(0, TILE_HEIGHT / 2);
+                      g.lineTo(0, TILE_HEIGHT / 2 + DEPTH);
+                      g.lineTo(TILE_WIDTH / 2, DEPTH);
+                      g.closePath();
+                      g.endFill();
+                      
+                      // Top face (brightest)
                       g.beginFill(isAlt ? 0x5c5c8a : 0x6a6a9a);
-                      g.lineStyle(1, 0x7a7aaa, 0.5);
+                      g.lineStyle(1, 0x7a7aaa, 0.3);
                       g.moveTo(0, -TILE_HEIGHT / 2);
                       g.lineTo(TILE_WIDTH / 2, 0);
                       g.lineTo(0, TILE_HEIGHT / 2);
