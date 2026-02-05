@@ -1008,7 +1008,10 @@ function App() {
                       y={pos.y}
                       draw={(g) => {
                         g.clear();
-                        g.beginFill(0x0d0d1a, 0.5);
+                        // Border tiles: darker floor edge visible against black bg
+                        const edgeAlt = (x + y) % 2 === 0;
+                        g.beginFill(edgeAlt ? 0x3a3a5e : 0x444470);
+                        g.lineStyle(1, 0x50507a, 0.4);
                         g.moveTo(0, -TILE_HEIGHT / 2);
                         g.lineTo(TILE_WIDTH / 2, 0);
                         g.lineTo(0, TILE_HEIGHT / 2);
