@@ -133,6 +133,212 @@ function drawHabboAvatar(g: import('pixi.js').Graphics, bodyColorHex: string) {
   px(-2, -24, 3, 1, skinShade);
 }
 
+// Mini Habbo avatar component for chat bubbles and logs (CSS-based pixel art)
+function MiniHabboAvatar({ bodyColor, size = 24 }: { bodyColor: string; size?: number }) {
+  const px = size / 12; // base pixel unit
+  const hairColor = '#3D2B1F';
+  const skin = '#EAC4A0';
+  const outline = '#1A1A2E';
+  
+  return (
+    <div style={{
+      width: size,
+      height: size,
+      display: 'flex',
+      flexDirection: 'column',
+      overflow: 'hidden',
+      flexShrink: 0,
+    }}>
+      {/* Hair */}
+      <div style={{ 
+        height: px * 2, 
+        background: hairColor,
+        borderLeft: `${px}px solid ${outline}`,
+        borderRight: `${px}px solid ${outline}`,
+        borderTop: `${px}px solid ${outline}`,
+      }} />
+      {/* Head */}
+      <div style={{ 
+        height: px * 5, 
+        background: skin,
+        borderLeft: `${px}px solid ${outline}`,
+        borderRight: `${px}px solid ${outline}`,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: px * 2,
+      }}>
+        {/* Eyes */}
+        <div style={{ width: px * 1.5, height: px * 1.5, background: outline }} />
+        <div style={{ width: px * 1.5, height: px * 1.5, background: outline }} />
+      </div>
+      {/* Body */}
+      <div style={{ 
+        flex: 1, 
+        background: bodyColor,
+        borderLeft: `${px}px solid ${outline}`,
+        borderRight: `${px}px solid ${outline}`,
+        borderBottom: `${px}px solid ${outline}`,
+      }} />
+    </div>
+  );
+}
+
+// Large Habbo avatar for profile modal (CSS-based pixel art)
+function LargeHabboAvatar({ bodyColor }: { bodyColor: string }) {
+  const px = 3; // pixel unit for large avatar
+  const hairColor = '#3D2B1F';
+  const skin = '#EAC4A0';
+  const skinShade = '#D4A878';
+  const outline = '#1A1A2E';
+  const bodyDark = (() => {
+    const c = parseInt(bodyColor.slice(1), 16);
+    const r = Math.max(0, ((c >> 16) & 0xFF) * 0.65);
+    const g = Math.max(0, ((c >> 8) & 0xFF) * 0.65);
+    const b = Math.max(0, (c & 0xFF) * 0.65);
+    return `rgb(${Math.floor(r)},${Math.floor(g)},${Math.floor(b)})`;
+  })();
+
+  return (
+    <div style={{
+      width: 60,
+      height: 90,
+      position: 'relative',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+    }}>
+      {/* Hair */}
+      <div style={{
+        width: px * 12,
+        height: px * 4,
+        background: hairColor,
+        border: `${px}px solid ${outline}`,
+        borderBottom: 'none',
+      }} />
+      {/* Head */}
+      <div style={{
+        width: px * 12,
+        height: px * 9,
+        background: skin,
+        borderLeft: `${px}px solid ${outline}`,
+        borderRight: `${px}px solid ${outline}`,
+        position: 'relative',
+      }}>
+        {/* Head shadow */}
+        <div style={{
+          position: 'absolute',
+          right: 0,
+          top: px,
+          width: px * 2,
+          height: px * 7,
+          background: skinShade,
+        }} />
+        {/* Eyes */}
+        <div style={{
+          position: 'absolute',
+          top: px * 3,
+          left: px * 2,
+          width: px * 2,
+          height: px * 2,
+          background: '#fff',
+        }} />
+        <div style={{
+          position: 'absolute',
+          top: px * 3,
+          left: px * 3,
+          width: px,
+          height: px * 2,
+          background: outline,
+        }} />
+        <div style={{
+          position: 'absolute',
+          top: px * 3,
+          right: px * 3,
+          width: px * 2,
+          height: px * 2,
+          background: '#fff',
+        }} />
+        <div style={{
+          position: 'absolute',
+          top: px * 3,
+          right: px * 3,
+          width: px,
+          height: px * 2,
+          background: outline,
+        }} />
+        {/* Mouth */}
+        <div style={{
+          position: 'absolute',
+          bottom: px * 2,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: px * 3,
+          height: px,
+          background: skinShade,
+        }} />
+      </div>
+      {/* Neck */}
+      <div style={{
+        width: px * 4,
+        height: px * 2,
+        background: skin,
+      }} />
+      {/* Body */}
+      <div style={{
+        width: px * 12,
+        height: px * 8,
+        background: bodyColor,
+        border: `${px}px solid ${outline}`,
+        borderBottom: 'none',
+        position: 'relative',
+      }}>
+        {/* Arms */}
+        <div style={{
+          position: 'absolute',
+          left: -px * 3,
+          top: 0,
+          width: px * 2,
+          height: px * 7,
+          background: skin,
+          borderLeft: `${px}px solid ${outline}`,
+        }} />
+        <div style={{
+          position: 'absolute',
+          right: -px * 3,
+          top: 0,
+          width: px * 2,
+          height: px * 7,
+          background: skin,
+          borderRight: `${px}px solid ${outline}`,
+        }} />
+      </div>
+      {/* Legs */}
+      <div style={{
+        width: px * 12,
+        display: 'flex',
+        justifyContent: 'center',
+        gap: px,
+      }}>
+        <div style={{
+          width: px * 3,
+          height: px * 5,
+          background: bodyDark,
+          border: `${px}px solid ${outline}`,
+          borderTop: 'none',
+        }} />
+        <div style={{
+          width: px * 3,
+          height: px * 5,
+          background: bodyDark,
+          border: `${px}px solid ${outline}`,
+          borderTop: 'none',
+        }} />
+      </div>
+    </div>
+  );
+}
+
 // Habbo-style stacking chat bubbles
 interface FloatingBubble {
   id: string;
@@ -955,50 +1161,8 @@ function App() {
                 gap: 8,
               }}
             >
-              {/* Mini avatar pic */}
-              <div
-                style={{
-                  width: 24,
-                  height: 24,
-                  borderRadius: 0,
-                  background: bubble.bodyColor,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                  boxShadow: 'inset 0 -2px 4px rgba(0,0,0,0.15)',
-                }}
-              >
-                {/* Simple face: skin circle with eyes */}
-                <div style={{
-                  width: 14,
-                  height: 14,
-                  borderRadius: '50%',
-                  background: '#fcd5b8',
-                  position: 'relative',
-                  marginTop: -2,
-                }}>
-                  {/* Eyes */}
-                  <div style={{
-                    position: 'absolute',
-                    top: 5,
-                    left: 3,
-                    width: 3,
-                    height: 3,
-                    borderRadius: '50%',
-                    background: '#333',
-                  }} />
-                  <div style={{
-                    position: 'absolute',
-                    top: 5,
-                    right: 3,
-                    width: 3,
-                    height: 3,
-                    borderRadius: '50%',
-                    background: '#333',
-                  }} />
-                </div>
-              </div>
+              {/* Mini pixel avatar */}
+              <MiniHabboAvatar bodyColor={bubble.bodyColor} size={24} />
               <div>
                 <span style={{ fontWeight: 600 }}>{cleanName}:</span>{' '}
                 <span>{msgText}</span>
@@ -1328,47 +1492,8 @@ function App() {
               
               return (
                 <div key={m.id} style={{ marginBottom: 10, fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}>
-                  {/* Mini avatar */}
-                  <div
-                    style={{
-                      width: 20,
-                      height: 20,
-                      borderRadius: 2,
-                      background: bodyColor,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0,
-                      marginTop: 1,
-                    }}
-                  >
-                    <div style={{
-                      width: 10,
-                      height: 10,
-                      borderRadius: '50%',
-                      background: '#fcd5b8',
-                      position: 'relative',
-                    }}>
-                      <div style={{
-                        position: 'absolute',
-                        top: 4,
-                        left: 2,
-                        width: 2,
-                        height: 2,
-                        borderRadius: '50%',
-                        background: '#333',
-                      }} />
-                      <div style={{
-                        position: 'absolute',
-                        top: 4,
-                        right: 2,
-                        width: 2,
-                        height: 2,
-                        borderRadius: '50%',
-                        background: '#333',
-                      }} />
-                    </div>
-                  </div>
+                  {/* Mini pixel avatar */}
+                  <MiniHabboAvatar bodyColor={bodyColor} size={20} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <span style={{ color: '#FF4D4D', fontWeight: 600 }}>{m.agentName}</span>
                     <span style={{ opacity: 0.5 }}>: </span>
@@ -1619,84 +1744,19 @@ function App() {
           </button>
 
           <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
-            {/* Large avatar preview */}
+            {/* Large pixel avatar preview */}
             <div
               style={{
                 width: 80,
                 height: 100,
-                background: 'rgba(255,255,255,0.1)',
-                borderRadius: 0,
+                background: 'rgba(255,255,255,0.05)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 flexShrink: 0,
               }}
             >
-              {/* Zoomed avatar */}
-              <div style={{ position: 'relative' }}>
-                {/* Shadow */}
-                <div
-                  style={{
-                    position: 'absolute',
-                    bottom: -5,
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    width: 42,
-                    height: 14,
-                    background: 'rgba(0,0,0,0.3)',
-                    borderRadius: '50%',
-                  }}
-                />
-                {/* Body */}
-                <div
-                  style={{
-                    width: 42,
-                    height: 54,
-                    background: selectedProfile.bodyColor,
-                    borderRadius: '50%',
-                    position: 'relative',
-                    boxShadow: `inset 0 -8px 16px rgba(0,0,0,0.2)`,
-                  }}
-                />
-                {/* Head */}
-                <div
-                  style={{
-                    position: 'absolute',
-                    top: -20,
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    width: 36,
-                    height: 36,
-                    background: '#fcd5b8',
-                    borderRadius: '50%',
-                    boxShadow: `inset 0 -4px 8px rgba(0,0,0,0.1)`,
-                  }}
-                >
-                  {/* Eyes */}
-                  <div
-                    style={{
-                      position: 'absolute',
-                      top: 14,
-                      left: 8,
-                      width: 6,
-                      height: 6,
-                      background: '#333',
-                      borderRadius: '50%',
-                    }}
-                  />
-                  <div
-                    style={{
-                      position: 'absolute',
-                      top: 14,
-                      right: 8,
-                      width: 6,
-                      height: 6,
-                      background: '#333',
-                      borderRadius: '50%',
-                    }}
-                  />
-                </div>
-              </div>
+              <LargeHabboAvatar bodyColor={selectedProfile.bodyColor} />
             </div>
 
             {/* Profile info */}
