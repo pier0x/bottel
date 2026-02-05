@@ -1104,130 +1104,123 @@ function App() {
       )}
 
       {/* Chat bubbles overlay (HTML for better text rendering) */}
-      {isMobile ? (
-        /* Mobile: flex column stacking from bottom, no horizontal room positioning */
-        <div
-          style={{
-            position: 'absolute',
-            bottom: 'calc(68px + env(safe-area-inset-bottom, 0px))',  /* above mobile navbar */
-            left: 0,
-            right: 0,
-            display: 'flex',
-            flexDirection: 'column-reverse',
-            alignItems: 'center',
-            gap: 4,
-            pointerEvents: 'none',
-            zIndex: 5,
-            maxHeight: '50vh',
-            overflow: 'hidden',
-            padding: '0 8px',
-          }}
-        >
-          {floatingBubbles
+      {/* Chat bubbles — stacked from room top, newest at bottom */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: isMobile ? '100%' : bubbleBaseY + 50,
+          pointerEvents: 'none',
+          overflow: 'hidden',
+          zIndex: 5,
+        }}
+      >
+        {(() => {
+          // On mobile: stack as a column near the room top area
+          // On desktop: absolute position at room coordinates
+          const mobileBubbleTop = offsetY - 60; // start just above the room
+          const MOBILE_LINE_H = 28; // height per bubble line on mobile
+          
+          return floatingBubbles
             .slice()
-            .sort((a, b) => b.timestamp - a.timestamp)
-            .slice(0, 8)
-            .map((bubble) => {
-              const age = Date.now() - bubble.timestamp;
-              const fadeStart = BUBBLE_LIFETIME * 0.75;
-              const opacity = age > fadeStart ? Math.max(0, 1 - (age - fadeStart) / (BUBBLE_LIFETIME - fadeStart)) : 1;
-              
+            .sort((a, b) => a.timestamp - b.timestamp) // oldest first (top), newest last (bottom)
+            .map((bubble, index) => {
               const cleanName = bubble.agentName.replace(/[\u{1F600}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F900}-\u{1F9FF}\u{1F1E0}-\u{1F1FF}]/gu, '').trim();
               
-              if (opacity <= 0) return null;
-              
-              return (
-                <div
-                  key={bubble.id}
-                  style={{
-                    opacity,
-                    background: 'rgba(255, 255, 255, 0.95)',
-                    padding: '4px 8px 4px 4px',
-                    border: '2px solid #000',
-                    fontSize: 11,
-                    fontFamily: '"IBM Plex Mono", "Courier New", monospace',
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    maxWidth: '90vw',
-                    color: '#1a1a2e',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 6,
-                    flexShrink: 0,
-                  }}
-                >
-                  <MiniHabboAvatar bodyColor={bubble.bodyColor} size={18} />
-                  <span style={{ fontWeight: 600, flexShrink: 0 }}>{cleanName}:</span>
-                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{bubble.content}</span>
-                </div>
-              );
-            })}
-        </div>
-      ) : (
-        /* Desktop: absolute positioned bubbles at room coordinates */
-        <div
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            width: '100%',
-            height: bubbleBaseY + 50,
-            pointerEvents: 'none',
-            overflow: 'hidden',
-            zIndex: 5,
-          }}
-        >
-          {floatingBubbles.map((bubble) => {
-            const y = bubbleBaseY - (bubble.slot * BUBBLE_HEIGHT);
-            
-            const fadeStartY = 100;
-            const fadeEndY = NAVBAR_HEIGHT;
-            let opacity = 1;
-            if (y < fadeStartY) {
-              opacity = Math.max(0, (y - fadeEndY) / (fadeStartY - fadeEndY));
-            }
-            
-            const cleanName = bubble.agentName.replace(/[\u{1F600}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F900}-\u{1F9FF}\u{1F1E0}-\u{1F1FF}]/gu, '').trim();
-            
-            const screenX = offsetX + (bubble.x * scale);
-            
-            if (opacity <= 0) return null;
-            
-            return (
-              <div
-                key={bubble.id}
-                style={{
-                  position: 'absolute',
-                  left: screenX,
-                  top: y,
-                  transform: 'translateX(-50%)',
-                  opacity,
-                  transition: 'top 0.3s ease-out, opacity 0.3s ease-out',
-                  background: 'rgba(255, 255, 255, 0.95)',
-                  padding: '5px 12px 5px 6px',
-                  border: '2px solid #000',
-                  fontSize: 13,
-                  fontFamily: '"IBM Plex Mono", "Courier New", monospace',
-                  whiteSpace: 'normal',
-                  wordBreak: 'break-word',
-                  maxWidth: 400,
-                  color: '#1a1a2e',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                }}
-              >
-                <MiniHabboAvatar bodyColor={bubble.bodyColor} size={24} />
-                <div>
-                  <span style={{ fontWeight: 600 }}>{cleanName}:</span>{' '}
-                  <span>{bubble.content}</span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
+              if (isMobile) {
+                // Mobile: stack in a centered column from room top, going up
+                const y = mobileBubbleTop - (index * MOBILE_LINE_H);
+                
+                // Fade near top of screen
+                const fadeStartY = 80;
+                const fadeEndY = 40;
+                let opacity = 1;
+                if (y < fadeStartY) {
+                  opacity = Math.max(0, (y - fadeEndY) / (fadeStartY - fadeEndY));
+                }
+                if (opacity <= 0) return null;
+                
+                return (
+                  <div
+                    key={bubble.id}
+                    style={{
+                      position: 'absolute',
+                      left: '50%',
+                      top: y,
+                      transform: 'translateX(-50%)',
+                      opacity,
+                      transition: 'top 0.3s ease-out, opacity 0.3s ease-out',
+                      background: 'rgba(255, 255, 255, 0.95)',
+                      padding: '3px 8px 3px 4px',
+                      border: '2px solid #000',
+                      fontSize: 11,
+                      fontFamily: '"IBM Plex Mono", "Courier New", monospace',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      maxWidth: '88vw',
+                      color: '#1a1a2e',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 5,
+                    }}
+                  >
+                    <MiniHabboAvatar bodyColor={bubble.bodyColor} size={18} />
+                    <span style={{ fontWeight: 600, flexShrink: 0 }}>{cleanName}:</span>
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{bubble.content}</span>
+                  </div>
+                );
+              } else {
+                // Desktop: absolute position at room screen coordinates
+                const y = bubbleBaseY - (bubble.slot * BUBBLE_HEIGHT);
+                
+                const fadeStartY = 100;
+                const fadeEndY = NAVBAR_HEIGHT;
+                let opacity = 1;
+                if (y < fadeStartY) {
+                  opacity = Math.max(0, (y - fadeEndY) / (fadeStartY - fadeEndY));
+                }
+                
+                const screenX = offsetX + (bubble.x * scale);
+                if (opacity <= 0) return null;
+                
+                return (
+                  <div
+                    key={bubble.id}
+                    style={{
+                      position: 'absolute',
+                      left: screenX,
+                      top: y,
+                      transform: 'translateX(-50%)',
+                      opacity,
+                      transition: 'top 0.3s ease-out, opacity 0.3s ease-out',
+                      background: 'rgba(255, 255, 255, 0.95)',
+                      padding: '5px 12px 5px 6px',
+                      border: '2px solid #000',
+                      fontSize: 13,
+                      fontFamily: '"IBM Plex Mono", "Courier New", monospace',
+                      whiteSpace: 'normal',
+                      wordBreak: 'break-word',
+                      maxWidth: 400,
+                      color: '#1a1a2e',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                    }}
+                  >
+                    <MiniHabboAvatar bodyColor={bubble.bodyColor} size={24} />
+                    <div>
+                      <span style={{ fontWeight: 600 }}>{cleanName}:</span>{' '}
+                      <span>{bubble.content}</span>
+                    </div>
+                  </div>
+                );
+              }
+            });
+        })()}
+      </div>
 
       {/* PixiJS Canvas */}
       <Stage
