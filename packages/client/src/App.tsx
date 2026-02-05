@@ -872,6 +872,27 @@ function App() {
             <IconChart size={20} />
             <span>Info</span>
           </button>
+          <button
+            onClick={toggleBots}
+            disabled={botsLoading}
+            style={{
+              background: botsRunning ? '#991b1b' : 'transparent',
+              border: 'none',
+              padding: '10px 16px',
+              borderRadius: 0,
+              color: botsRunning ? '#fff' : '#FF4D4D',
+              fontSize: 13,
+              cursor: botsLoading ? 'wait' : 'pointer',
+              opacity: botsLoading ? 0.7 : 1,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 4,
+            }}
+          >
+            <IconZap size={20} />
+            <span>{botsLoading ? '...' : botsRunning ? 'Stop' : 'Bots'}</span>
+          </button>
         </div>
       )}
 
