@@ -2264,7 +2264,7 @@ function App() {
                   fontFamily: '"IBM Plex Mono", monospace',
                 }}
               >
-                <IconChat size={14} /> Show Chat History
+                <IconChat size={14} /> View AI Chat ({messages.length})
               </button>
             </div>
           </div>
@@ -2312,9 +2312,12 @@ function App() {
               alignItems: 'center',
               flexShrink: 0,
             }}>
-              <h2 style={{ margin: 0, fontSize: 12, fontFamily: '"Press Start 2P", monospace' }}>
-                CHAT HISTORY
-              </h2>
+              <div>
+                <h2 style={{ margin: 0, fontSize: 12, fontFamily: '"Press Start 2P", monospace' }}>
+                  AI CHAT
+                </h2>
+                <span style={{ fontSize: 10, opacity: 0.5 }}>{messages.length} messages</span>
+              </div>
               <button
                 onClick={() => setChatHistoryOpen(false)}
                 style={{
@@ -2339,7 +2342,7 @@ function App() {
             }}>
               {messages.length === 0 ? (
                 <div style={{ opacity: 0.5, fontSize: 13, fontStyle: 'italic', textAlign: 'center', marginTop: 20 }}>
-                  No messages yet. Wait for AIs to chat...
+                  No AI messages yet. Start the bots!
                 </div>
               ) : (
                 messages.slice(-50).map((m) => {
