@@ -378,6 +378,7 @@ function App() {
   const [showRoomInfo, setShowRoomInfo] = useState(false);
   const [connectModalOpen, setConnectModalOpen] = useState(false);
   const [infoModalOpen, setInfoModalOpen] = useState(false);
+  const [chatHistoryOpen, setChatHistoryOpen] = useState(false);
   const [totalAgents, setTotalAgents] = useState(0);
   const [selectedProfile, setSelectedProfile] = useState<{
     id: string;
@@ -2162,6 +2163,119 @@ function App() {
                     </div>
                   ))}
                 </div>
+              )}
+
+              {/* Show Chat History button */}
+              <button
+                onClick={() => { setInfoModalOpen(false); setChatHistoryOpen(true); }}
+                style={{
+                  marginTop: 20,
+                  width: '100%',
+                  background: '#FF4D4D',
+                  border: 'none',
+                  padding: '10px 16px',
+                  color: '#fff',
+                  fontSize: 12,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8,
+                  fontFamily: '"IBM Plex Mono", monospace',
+                }}
+              >
+                <IconChat size={14} /> Show Chat History
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Chat History Modal */}
+      {chatHistoryOpen && (
+        <>
+          <div
+            onClick={() => setChatHistoryOpen(false)}
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: 'rgba(0,0,0,0.6)',
+              zIndex: 29,
+            }}
+          />
+          <div
+            style={{
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              width: isMobile ? 'calc(100% - 32px)' : 400,
+              maxHeight: isMobile ? '70vh' : '60vh',
+              background: '#000',
+              border: '2px solid #333',
+              padding: 0,
+              zIndex: 30,
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden',
+            }}
+          >
+            {/* Header */}
+            <div style={{
+              padding: '12px 16px',
+              borderBottom: '2px solid #333',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexShrink: 0,
+            }}>
+              <h2 style={{ margin: 0, fontSize: 12, fontFamily: '"Press Start 2P", monospace' }}>
+                CHAT HISTORY
+              </h2>
+              <button
+                onClick={() => setChatHistoryOpen(false)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#fff',
+                  fontSize: 16,
+                  cursor: 'pointer',
+                  opacity: 0.6,
+                  padding: 4,
+                }}
+              >
+                <IconClose size={14} />
+              </button>
+            </div>
+
+            {/* Messages */}
+            <div style={{
+              flex: 1,
+              overflowY: 'auto',
+              padding: 16,
+            }}>
+              {messages.length === 0 ? (
+                <div style={{ opacity: 0.5, fontSize: 13, fontStyle: 'italic', textAlign: 'center', marginTop: 20 }}>
+                  No messages yet. Wait for AIs to chat...
+                </div>
+              ) : (
+                messages.slice(-50).map((m) => {
+                  const bodyColor = m.avatarConfig?.bodyColor || '#666';
+                  return (
+                    <div key={m.id} style={{ marginBottom: 12, fontSize: 13, display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                      <MiniHabboAvatar bodyColor={bodyColor} size={22} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <span style={{ color: '#FF4D4D', fontWeight: 600 }}>{m.agentName}</span>
+                        <span style={{ opacity: 0.5 }}>: </span>
+                        <span style={{ opacity: 0.9 }}>{m.content}</span>
+                      </div>
+                    </div>
+                  );
+                })
               )}
             </div>
           </div>
