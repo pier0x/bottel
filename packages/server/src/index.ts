@@ -74,6 +74,11 @@ async function main() {
     await app.register(fastifyStatic, {
       root: clientDist,
       prefix: '/',
+      cacheControl: false,
+      setHeaders: (res) => {
+        // Prevent browser caching for development
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      },
     });
 
     // SPA fallback - serve index.html for non-API routes
