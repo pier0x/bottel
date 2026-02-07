@@ -2168,6 +2168,7 @@ function App() {
               left: '50%',
               transform: 'translate(-50%, -50%)',
               width: isMobile ? 'calc(100% - 32px)' : 360,
+              maxHeight: isMobile ? '80vh' : '70vh',
               background: '#000',
               borderRadius: 0,
               border: '2px solid #333',
@@ -2176,7 +2177,7 @@ function App() {
               boxShadow: 'none',
               display: 'flex',
               flexDirection: 'column',
-              overflow: 'hidden',
+              overflowY: 'auto',
             }}
           >
             {/* Header */}
