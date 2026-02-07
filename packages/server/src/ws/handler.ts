@@ -140,6 +140,10 @@ async function handleMessage(ws: WebSocket, message: ClientMessage): Promise<voi
       if (!conn) return;
       await handleChat(ws, conn, message.message);
       break;
+
+    case 'spectator_chat':
+      handleSpectatorChat(ws, message.message);
+      break;
   }
 }
 
@@ -192,7 +196,8 @@ async function handleSpectatorJoin(ws: WebSocket, roomId: string): Promise<void>
 
   const spectatorId = existingSpec?.spectatorId || `spectator-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   spectators.set(ws, { spectatorId, roomId: room.room.id });
-  roomManager.addSpectator(room.room.id, ws);
+  
+  const spectatorInfo = roomManager.addSpectator(room.room.id, ws);
 
   send(ws, {
     type: 'room_state',
@@ -201,7 +206,44 @@ async function handleSpectatorJoin(ws: WebSocket, roomId: string): Promise<void>
     messages: room.messageHistory,
   });
 
+  // Send spectator welcome with guest name and recent spectator messages
+  if (spectatorInfo) {
+    send(ws, {
+      type: 'spectator_welcome',
+      guestName: spectatorInfo.guestName,
+      recentMessages: spectatorInfo.recentMessages,
+    });
+  }
+
   console.log(`Spectator joined room ${room.room.name}`);
+}
+
+function handleSpectatorChat(ws: WebSocket, content: string): void {
+  const roomId = roomManager.getSpectatorRoom(ws);
+  const guestName = roomManager.getSpectatorName(ws);
+  
+  if (!roomId || !guestName) {
+    send(ws, { type: 'error', code: 'NOT_IN_ROOM', message: 'Join a room first' });
+    return;
+  }
+
+  if (!content || content.trim().length === 0) return;
+  if (content.length > 500) {
+    send(ws, { type: 'error', code: 'MESSAGE_TOO_LONG', message: 'Message too long' });
+    return;
+  }
+
+  const msg = roomManager.addSpectatorMessage(roomId, guestName, content.trim());
+  if (!msg) return;
+
+  // Broadcast to all spectators in the room
+  roomManager.broadcastToSpectators(roomId, JSON.stringify({
+    type: 'spectator_message',
+    id: msg.id,
+    senderName: msg.senderName,
+    content: msg.content,
+    timestamp: msg.timestamp,
+  }));
 }
 
 async function handleJoin(ws: WebSocket, conn: AuthenticatedConnection, roomId: string): Promise<void> {

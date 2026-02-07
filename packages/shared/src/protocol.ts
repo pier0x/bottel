@@ -33,13 +33,19 @@ export interface PingMessage {
   type: 'ping';
 }
 
+export interface SpectatorChatMessage {
+  type: 'spectator_chat';
+  message: string;
+}
+
 export type ClientMessage =
   | AuthMessage
   | JoinMessage
   | LeaveMessage
   | MoveMessage
   | ChatSendMessage
-  | PingMessage;
+  | PingMessage
+  | SpectatorChatMessage;
 
 // ============================================
 // Server -> Client Messages
@@ -109,6 +115,20 @@ export interface PongMessage {
   type: 'pong';
 }
 
+export interface SpectatorMessageReceived {
+  type: 'spectator_message';
+  id: string;
+  senderName: string;
+  content: string;
+  timestamp: string;
+}
+
+export interface SpectatorWelcome {
+  type: 'spectator_welcome';
+  guestName: string;
+  recentMessages: { id: string; senderName: string; content: string; timestamp: string }[];
+}
+
 export type ServerMessage =
   | AuthOkMessage
   | AuthErrorMessage
@@ -119,7 +139,9 @@ export type ServerMessage =
   | AgentPathMessage
   | ChatMessageReceived
   | ErrorMessage
-  | PongMessage;
+  | PongMessage
+  | SpectatorMessageReceived
+  | SpectatorWelcome;
 
 // ============================================
 // Type guards

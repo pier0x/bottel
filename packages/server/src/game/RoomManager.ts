@@ -93,16 +93,26 @@ function findPath(
   return [];
 }
 
+interface SpectatorChatMsg {
+  id: string;
+  senderName: string;
+  content: string;
+  timestamp: string;
+}
+
 interface RoomInstance {
   room: Room;
   users: Map<string, ConnectedUser>;
   spectators: Set<WebSocket>;
   messageHistory: ChatMessage[];
+  spectatorMessages: SpectatorChatMsg[];
 }
 
 class RoomManager {
   private rooms: Map<string, RoomInstance> = new Map();
   private userRooms: Map<string, string> = new Map();
+  private spectatorNames: Map<WebSocket, string> = new Map();
+  private spectatorRooms: Map<WebSocket, string> = new Map();
 
   async ensureLobbyExists(): Promise<void> {
     const existing = await db.query.rooms.findFirst({
@@ -227,6 +237,7 @@ class RoomManager {
       users: new Map(),
       spectators: new Set(),
       messageHistory,
+      spectatorMessages: [],
     };
 
     this.rooms.set(roomId, instance);
@@ -425,24 +436,81 @@ class RoomManager {
     }
   }
 
-  addSpectator(roomId: string, ws: WebSocket): void {
+  addSpectator(roomId: string, ws: WebSocket): { guestName: string; recentMessages: SpectatorChatMsg[] } | null {
     const room = this.rooms.get(roomId);
-    if (room) {
-      room.spectators.add(ws);
-      console.log(`Spectator added to room ${room.room.name}. Total: ${room.spectators.size}`);
+    if (!room) return null;
+    
+    room.spectators.add(ws);
+    
+    // Generate guest name if not already assigned
+    let guestName = this.spectatorNames.get(ws);
+    if (!guestName) {
+      const id = Math.random().toString(36).slice(2, 6).toUpperCase();
+      guestName = `Guest-${id}`;
+      this.spectatorNames.set(ws, guestName);
     }
+    this.spectatorRooms.set(ws, roomId);
+    
+    console.log(`Spectator ${guestName} added to room ${room.room.name}. Total: ${room.spectators.size}`);
+    
+    return {
+      guestName,
+      recentMessages: room.spectatorMessages.slice(-20),
+    };
   }
 
   removeSpectator(roomId: string, ws: WebSocket): void {
     const room = this.rooms.get(roomId);
     if (room) {
       room.spectators.delete(ws);
-      console.log(`Spectator removed from room ${room.room.name}. Total: ${room.spectators.size}`);
+      const name = this.spectatorNames.get(ws) || 'Unknown';
+      this.spectatorNames.delete(ws);
+      this.spectatorRooms.delete(ws);
+      console.log(`Spectator ${name} removed from room ${room.room.name}. Total: ${room.spectators.size}`);
       
       // Unload if completely empty
       if (room.users.size === 0 && room.spectators.size === 0) {
         console.log(`🚪 Unloading room ${room.room.name} (empty)`);
         this.rooms.delete(roomId);
+      }
+    }
+  }
+
+  getSpectatorName(ws: WebSocket): string | undefined {
+    return this.spectatorNames.get(ws);
+  }
+
+  getSpectatorRoom(ws: WebSocket): string | undefined {
+    return this.spectatorRooms.get(ws);
+  }
+
+  addSpectatorMessage(roomId: string, senderName: string, content: string): SpectatorChatMsg | null {
+    const room = this.rooms.get(roomId);
+    if (!room) return null;
+    
+    const msg: SpectatorChatMsg = {
+      id: `spec-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      senderName,
+      content,
+      timestamp: new Date().toISOString(),
+    };
+    
+    room.spectatorMessages.push(msg);
+    // Keep only last 50 messages
+    if (room.spectatorMessages.length > 50) {
+      room.spectatorMessages = room.spectatorMessages.slice(-50);
+    }
+    
+    return msg;
+  }
+
+  broadcastToSpectators(roomId: string, data: string): void {
+    const room = this.rooms.get(roomId);
+    if (!room) return;
+    
+    for (const ws of room.spectators) {
+      if (ws.readyState === 1) {
+        ws.send(data);
       }
     }
   }

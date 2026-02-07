@@ -379,6 +379,9 @@ function App() {
   const [connectModalOpen, setConnectModalOpen] = useState(false);
   const [infoModalOpen, setInfoModalOpen] = useState(false);
   const [chatHistoryOpen, setChatHistoryOpen] = useState(false);
+  const [spectatorMessages, setSpectatorMessages] = useState<{ id: string; senderName: string; content: string; timestamp: string }[]>([]);
+  const [guestName, setGuestName] = useState<string>('');
+  const [chatInput, setChatInput] = useState('');
   const [totalAgents, setTotalAgents] = useState(0);
   const [selectedProfile, setSelectedProfile] = useState<{
     id: string;
@@ -475,6 +478,7 @@ function App() {
       setAgents([]);
       setMessages([]);
       setFloatingBubbles([]);
+      setSpectatorMessages([]);
       smoothPositions.current.clear();
       
       // Join new room
@@ -849,6 +853,20 @@ function App() {
           }
           return currentAgents;
         });
+        break;
+
+      case 'spectator_welcome':
+        setGuestName(msg.guestName);
+        setSpectatorMessages(msg.recentMessages || []);
+        break;
+
+      case 'spectator_message':
+        setSpectatorMessages(prev => [...prev.slice(-49), {
+          id: msg.id,
+          senderName: msg.senderName,
+          content: msg.content,
+          timestamp: msg.timestamp,
+        }]);
         break;
     }
   }, []);
@@ -1476,68 +1494,129 @@ function App() {
             gap: 6,
           }}
         >
-          <IconChat size={14} /> {chatOpen ? 'Hide' : 'Show'} Chat
+          <IconChat size={14} /> {chatOpen ? 'Hide' : 'Chat'}
         </button>
       )}
 
-      {/* Chat log - toggleable on both desktop and mobile */}
+      {/* Spectator Chat - toggleable on both desktop and mobile */}
       <div
-        ref={chatLogRef}
-        onScroll={handleChatScroll}
         style={{
           position: 'absolute',
-          bottom: isMobile ? 60 : 16,
+          bottom: isMobile ? 'calc(60px + env(safe-area-inset-bottom, 0px))' : 16,
           right: isMobile ? 0 : 16,
           left: isMobile ? 0 : 'auto',
           width: isMobile ? '100%' : 320,
-          maxHeight: chatOpen ? (isMobile ? '50vh' : 300) : 0,
+          maxHeight: chatOpen ? (isMobile ? '50vh' : 350) : 0,
           background: 'rgba(0,0,0,0.95)',
-          borderRadius: isMobile ? '16px 16px 0 0' : 12,
-          padding: chatOpen ? 16 : 0,
-          paddingBottom: chatOpen ? 16 : 0,
-          overflowY: 'auto',
-          overflowX: 'hidden',
+          borderRadius: isMobile ? '16px 16px 0 0' : 0,
+          border: chatOpen ? '2px solid #333' : 'none',
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
           zIndex: 15,
-          
-          transition: 'max-height 0.3s ease, padding 0.3s ease',
+          transition: 'max-height 0.3s ease',
         }}
       >
         {chatOpen && (
           <>
-            <h3 style={{ 
-              marginBottom: 12, 
-              fontSize: 14, 
-              opacity: 0.7, 
-              textTransform: 'uppercase', 
-              letterSpacing: 1,
+            {/* Header */}
+            <div style={{
+              padding: '10px 12px',
+              borderBottom: '1px solid #333',
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
+              flexShrink: 0,
             }}>
-              Chat Log
-              <span style={{ fontSize: 12, opacity: 0.5 }}>{messages.length} messages</span>
-            </h3>
-            {messages.slice(-30).map((m) => {
-              // Get body color from message's avatar config snapshot
-              const bodyColor = m.avatarConfig?.bodyColor || '#666';
-              
-              return (
-                <div key={m.id} style={{ marginBottom: 10, fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}>
-                  {/* Mini pixel avatar */}
-                  <MiniHabboAvatar bodyColor={bodyColor} size={20} />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <span style={{ color: '#FF4D4D', fontWeight: 600 }}>{m.agentName}</span>
+              <span style={{ fontSize: 12, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1 }}>
+                Spectator Chat
+              </span>
+              <span style={{ fontSize: 11, opacity: 0.5 }}>
+                {guestName || 'Connecting...'}
+              </span>
+            </div>
+
+            {/* Messages */}
+            <div
+              ref={chatLogRef} 
+              onScroll={handleChatScroll}
+              style={{
+                flex: 1,
+                overflowY: 'auto',
+                padding: 12,
+              }}
+            >
+              {spectatorMessages.length === 0 ? (
+                <div style={{ opacity: 0.5, fontSize: 12, fontStyle: 'italic', textAlign: 'center', marginTop: 10 }}>
+                  No messages yet. Say hi! 👋
+                </div>
+              ) : (
+                spectatorMessages.map((m) => (
+                  <div key={m.id} style={{ marginBottom: 8, fontSize: 12 }}>
+                    <span style={{ 
+                      color: m.senderName === guestName ? '#4ade80' : '#60a5fa', 
+                      fontWeight: 600 
+                    }}>
+                      {m.senderName}
+                    </span>
                     <span style={{ opacity: 0.5 }}>: </span>
                     <span style={{ opacity: 0.9 }}>{m.content}</span>
                   </div>
-                </div>
-              );
-            })}
-            {messages.length === 0 && (
-              <div style={{ opacity: 0.5, fontSize: 13, fontStyle: 'italic' }}>
-                Waiting for AIs to chat...
-              </div>
-            )}
+                ))
+              )}
+            </div>
+
+            {/* Input */}
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (chatInput.trim() && wsRef.current?.readyState === 1) {
+                  wsRef.current.send(JSON.stringify({ type: 'spectator_chat', message: chatInput.trim() }));
+                  setChatInput('');
+                }
+              }}
+              style={{
+                padding: 10,
+                borderTop: '1px solid #333',
+                display: 'flex',
+                gap: 8,
+                flexShrink: 0,
+              }}
+            >
+              <input
+                type="text"
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                placeholder="Type a message..."
+                maxLength={500}
+                style={{
+                  flex: 1,
+                  background: '#1a1a1a',
+                  border: '1px solid #333',
+                  borderRadius: 0,
+                  padding: '8px 10px',
+                  color: '#fff',
+                  fontSize: 12,
+                  fontFamily: '"IBM Plex Mono", monospace',
+                  outline: 'none',
+                }}
+              />
+              <button
+                type="submit"
+                disabled={!chatInput.trim()}
+                style={{
+                  background: chatInput.trim() ? '#FF4D4D' : '#333',
+                  border: 'none',
+                  padding: '8px 14px',
+                  color: '#fff',
+                  fontSize: 12,
+                  fontWeight: 600,
+                  cursor: chatInput.trim() ? 'pointer' : 'default',
+                }}
+              >
+                Send
+              </button>
+            </form>
           </>
         )}
       </div>
