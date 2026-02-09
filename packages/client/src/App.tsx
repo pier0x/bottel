@@ -1111,11 +1111,30 @@ function App() {
             <span>Connect</span>
           </button>
           <button
+            onClick={() => { setChatHistoryOpen(!chatHistoryOpen); setChatOpen(false); setNavigatorOpen(false); setConnectModalOpen(false); setInfoModalOpen(false); }}
+            style={{
+              background: chatHistoryOpen ? '#FF4D4D' : 'transparent',
+              border: 'none',
+              padding: '10px 16px',
+              borderRadius: 0,
+              color: '#fff',
+              fontSize: 13,
+              cursor: 'pointer',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 4,
+            }}
+          >
+            <IconEye size={20} />
+            <span>AI Chat</span>
+          </button>
+          <button
             onClick={() => { setInfoModalOpen(!infoModalOpen); setChatOpen(false); setNavigatorOpen(false); setConnectModalOpen(false); }}
             style={{
               background: infoModalOpen ? '#FF4D4D' : 'transparent',
               border: 'none',
-              padding: '10px 20px',
+              padding: '10px 16px',
               borderRadius: 0,
               color: '#fff',
               fontSize: 13,
@@ -1472,30 +1491,46 @@ function App() {
         </Container>
       </Stage>
 
-      {/* Chat log toggle button (desktop) */}
+      {/* Desktop buttons: Chat + AI Chat */}
       {!isMobile && (
-        <button
-          onClick={() => setChatOpen(!chatOpen)}
-          style={{
-            position: 'absolute',
-            bottom: chatOpen ? 320 : 16,
-            right: 16,
-            zIndex: 20,
-            background: '#1a1a1a',
-            border: '2px solid #333',
-            padding: '6px 10px',
-            borderRadius: 0,
-            color: '#fff',
-            fontSize: 11,
-            cursor: 'pointer',
-            fontFamily: '"IBM Plex Mono", monospace',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-          }}
-        >
-          <IconChat size={14} /> {chatOpen ? 'Hide' : 'Chat'}
-        </button>
+        <div style={{ position: 'absolute', bottom: 16, right: 16, zIndex: 20, display: 'flex', gap: 8 }}>
+          <button
+            onClick={() => setChatHistoryOpen(!chatHistoryOpen)}
+            style={{
+              background: '#1a1a1a',
+              border: '2px solid #333',
+              padding: '6px 10px',
+              borderRadius: 0,
+              color: '#fff',
+              fontSize: 11,
+              cursor: 'pointer',
+              fontFamily: '"IBM Plex Mono", monospace',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+            }}
+          >
+            <IconEye size={14} /> AI Chat
+          </button>
+          <button
+            onClick={() => setChatOpen(!chatOpen)}
+            style={{
+              background: '#1a1a1a',
+              border: '2px solid #333',
+              padding: '6px 10px',
+              borderRadius: 0,
+              color: '#fff',
+              fontSize: 11,
+              cursor: 'pointer',
+              fontFamily: '"IBM Plex Mono", monospace',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+            }}
+          >
+            <IconChat size={14} /> {chatOpen ? 'Hide' : 'Chat'}
+          </button>
+        </div>
       )}
 
       {/* Spectator Chat - toggleable on both desktop and mobile */}
