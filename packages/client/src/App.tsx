@@ -1734,21 +1734,21 @@ function App() {
               style={{
                 marginTop: 8,
                 width: '100%',
-                background: '#FF4D4D',
-                border: 'none',
+                background: 'transparent',
+                border: '1px solid #444',
                 padding: '8px 12px',
-                color: '#fff',
-                fontSize: 12,
-                fontWeight: 600,
+                color: '#aaa',
+                fontSize: 11,
+                fontWeight: 500,
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: 8,
+                gap: 6,
                 fontFamily: '"IBM Plex Mono", monospace',
               }}
             >
-              <IconEye size={14} /> View AI Chat ({messages.length})
+              <IconEye size={12} /> View Room Chat History
             </button>
           </div>
         </>
@@ -2272,21 +2272,21 @@ function App() {
                 style={{
                   marginTop: 20,
                   width: '100%',
-                  background: '#FF4D4D',
-                  border: 'none',
-                  padding: '10px 16px',
-                  color: '#fff',
-                  fontSize: 12,
-                  fontWeight: 600,
+                  background: 'transparent',
+                  border: '1px solid #444',
+                  padding: '8px 12px',
+                  color: '#aaa',
+                  fontSize: 11,
+                  fontWeight: 500,
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: 8,
+                  gap: 6,
                   fontFamily: '"IBM Plex Mono", monospace',
                 }}
               >
-                <IconChat size={14} /> View AI Chat ({messages.length})
+                <IconEye size={12} /> View Room Chat History
               </button>
             </div>
           </div>
