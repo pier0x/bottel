@@ -1111,30 +1111,11 @@ function App() {
             <span>Connect</span>
           </button>
           <button
-            onClick={() => { setChatHistoryOpen(!chatHistoryOpen); setChatOpen(false); setNavigatorOpen(false); setConnectModalOpen(false); setInfoModalOpen(false); }}
-            style={{
-              background: chatHistoryOpen ? '#FF4D4D' : 'transparent',
-              border: 'none',
-              padding: '10px 16px',
-              borderRadius: 0,
-              color: '#fff',
-              fontSize: 13,
-              cursor: 'pointer',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: 4,
-            }}
-          >
-            <IconEye size={20} />
-            <span>AI Chat</span>
-          </button>
-          <button
             onClick={() => { setInfoModalOpen(!infoModalOpen); setChatOpen(false); setNavigatorOpen(false); setConnectModalOpen(false); }}
             style={{
               background: infoModalOpen ? '#FF4D4D' : 'transparent',
               border: 'none',
-              padding: '10px 16px',
+              padding: '10px 20px',
               borderRadius: 0,
               color: '#fff',
               fontSize: 13,
@@ -1491,46 +1472,30 @@ function App() {
         </Container>
       </Stage>
 
-      {/* Desktop buttons: Chat + AI Chat */}
+      {/* Desktop Chat button */}
       {!isMobile && (
-        <div style={{ position: 'absolute', bottom: 16, right: 16, zIndex: 20, display: 'flex', gap: 8 }}>
-          <button
-            onClick={() => setChatHistoryOpen(!chatHistoryOpen)}
-            style={{
-              background: '#1a1a1a',
-              border: '2px solid #333',
-              padding: '6px 10px',
-              borderRadius: 0,
-              color: '#fff',
-              fontSize: 11,
-              cursor: 'pointer',
-              fontFamily: '"IBM Plex Mono", monospace',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-            }}
-          >
-            <IconEye size={14} /> AI Chat
-          </button>
-          <button
-            onClick={() => setChatOpen(!chatOpen)}
-            style={{
-              background: '#1a1a1a',
-              border: '2px solid #333',
-              padding: '6px 10px',
-              borderRadius: 0,
-              color: '#fff',
-              fontSize: 11,
-              cursor: 'pointer',
-              fontFamily: '"IBM Plex Mono", monospace',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-            }}
-          >
-            <IconChat size={14} /> {chatOpen ? 'Hide' : 'Chat'}
-          </button>
-        </div>
+        <button
+          onClick={() => setChatOpen(!chatOpen)}
+          style={{
+            position: 'absolute',
+            bottom: 16,
+            right: 16,
+            zIndex: 20,
+            background: '#1a1a1a',
+            border: '2px solid #333',
+            padding: '6px 10px',
+            borderRadius: 0,
+            color: '#fff',
+            fontSize: 11,
+            cursor: 'pointer',
+            fontFamily: '"IBM Plex Mono", monospace',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+          }}
+        >
+          <IconChat size={14} /> {chatOpen ? 'Hide' : 'Chat'}
+        </button>
       )}
 
       {/* Spectator Chat - toggleable on both desktop and mobile */}
@@ -1760,10 +1725,31 @@ function App() {
               </div>
             )}
             {room.ownerUsername && (
-              <div style={{ fontSize: 12, opacity: 0.6, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div style={{ fontSize: 12, opacity: 0.6, display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>
                 <IconUser size={14} /> Owner: <span style={{ fontWeight: 500 }}>{room.ownerUsername}</span>
               </div>
             )}
+            <button
+              onClick={() => { setShowRoomInfo(false); setChatHistoryOpen(true); }}
+              style={{
+                marginTop: 8,
+                width: '100%',
+                background: '#FF4D4D',
+                border: 'none',
+                padding: '8px 12px',
+                color: '#fff',
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+                fontFamily: '"IBM Plex Mono", monospace',
+              }}
+            >
+              <IconEye size={14} /> View AI Chat ({messages.length})
+            </button>
           </div>
         </>
       )}
