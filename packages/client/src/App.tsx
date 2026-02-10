@@ -38,8 +38,9 @@ function lightenColor(c: number, amount: number): number {
 // Habbo-style pixel art avatar renderer
 // Draws a blocky isometric character with the given body color
 // Origin (0,0) = shadow center / feet position
-function drawHabboAvatar(g: import('pixi.js').Graphics, bodyColorHex: string) {
-  const PX = 2; // each design pixel = 2x2 screen pixels
+// walkFrame: 0 = standing, 1 = left step, 2 = right step
+function drawHabboAvatar(g: import('pixi.js').Graphics, bodyColorHex: string, walkFrame: number = 0) {
+  const PX = 2;
   const color = parseInt(bodyColorHex.slice(1), 16);
   const bodyDark = darkenColor(color, 0.35);
   const bodyLight = lightenColor(color, 0.15);
@@ -56,81 +57,74 @@ function drawHabboAvatar(g: import('pixi.js').Graphics, bodyColorHex: string) {
   g.drawEllipse(0, 0, 13, 5);
   g.endFill();
 
-  // Helper: filled rect in PX units, y goes up (negative = up)
   const px = (x: number, y: number, w: number, h: number, c: number) => {
     g.beginFill(c);
     g.drawRect(x * PX, y * PX, w * PX, h * PX);
     g.endFill();
   };
 
-  // --- Shoes (bottom) ---
-  px(-6, -2, 4, 2, outline);     // left shoe
-  px(1, -2, 4, 2, outline);      // right shoe
+  // Walk offsets for legs, arms, and body bob
+  const isWalking = walkFrame !== 0;
+  const step = walkFrame === 1 ? 1 : walkFrame === 2 ? -1 : 0;
+  const bob = isWalking ? -1 : 0; // slight body bounce
+
+  // --- Shoes ---
+  px(-6 + step, -2, 4, 2, outline);      // left shoe
+  px(1 - step, -2, 4, 2, outline);       // right shoe
 
   // --- Legs (pants) ---
-  px(-5, -8, 3, 6, bodyDark);    // left leg
-  px(1, -8, 3, 6, bodyDark);     // right leg
-  // Leg outline
-  px(-6, -8, 1, 6, outline);     // left leg outer
-  px(4, -8, 1, 6, outline);      // right leg outer
+  px(-5 + step, -8, 3, 6, bodyDark);     // left leg
+  px(1 - step, -8, 3, 6, bodyDark);      // right leg
+  px(-6 + step, -8, 1, 6, outline);      // left leg outline
+  px(4 - step, -8, 1, 6, outline);       // right leg outline
 
   // --- Belt ---
-  px(-6, -9, 11, 1, darkenColor(color, 0.5));
+  px(-6, -9 + bob, 11, 1, darkenColor(color, 0.5));
 
   // --- Body (shirt) ---
-  px(-6, -18, 11, 9, color);
-  // Shirt highlight (3/4 lighting)
-  px(-4, -17, 3, 3, bodyLight);
-  // Shirt shadow (right side)
-  px(3, -17, 2, 8, darkenColor(color, 0.15));
-  // Body outline
-  px(-7, -18, 1, 10, outline);   // left edge
-  px(5, -18, 1, 10, outline);    // right edge
-  px(-6, -19, 11, 1, outline);   // top edge
+  px(-6, -18 + bob, 11, 9, color);
+  px(-4, -17 + bob, 3, 3, bodyLight);
+  px(3, -17 + bob, 2, 8, darkenColor(color, 0.15));
+  px(-7, -18 + bob, 1, 10, outline);
+  px(5, -18 + bob, 1, 10, outline);
+  px(-6, -19 + bob, 11, 1, outline);
 
-  // --- Arms (skin colored, at sides) ---
-  px(-9, -17, 2, 8, skin);       // left arm
-  px(6, -17, 2, 8, skin);        // right arm
-  // Hands
-  px(-9, -9, 2, 2, skin);        // left hand
-  px(6, -9, 2, 2, skin);         // right hand
-  // Arm outlines
-  px(-10, -17, 1, 10, outline);
-  px(8, -17, 1, 10, outline);
+  // --- Arms (swing opposite to legs) ---
+  const armSwing = step * 2;
+  px(-9, -17 + bob - armSwing, 2, 8, skin);    // left arm
+  px(6, -17 + bob + armSwing, 2, 8, skin);     // right arm
+  px(-9, -9 + bob - armSwing, 2, 2, skin);     // left hand
+  px(6, -9 + bob + armSwing, 2, 2, skin);      // right hand
+  px(-10, -17 + bob - armSwing, 1, 10, outline);
+  px(8, -17 + bob + armSwing, 1, 10, outline);
 
   // --- Neck ---
-  px(-2, -21, 3, 2, skin);
+  px(-2, -21 + bob, 3, 2, skin);
 
   // --- Head ---
-  px(-6, -30, 11, 9, skin);
-  // Head shadow (right side for 3/4 depth)
-  px(3, -29, 2, 7, skinShade);
-  // Head outline
-  px(-7, -30, 1, 9, outline);    // left
-  px(5, -30, 1, 9, outline);     // right
-  px(-6, -31, 11, 1, outline);   // top
-  px(-6, -21, 11, 1, outline);   // bottom (jaw)
-  // Chin curve
-  px(-6, -22, 1, 1, outline);
-  px(4, -22, 1, 1, outline);
+  px(-6, -30 + bob, 11, 9, skin);
+  px(3, -29 + bob, 2, 7, skinShade);
+  px(-7, -30 + bob, 1, 9, outline);
+  px(5, -30 + bob, 1, 9, outline);
+  px(-6, -31 + bob, 11, 1, outline);
+  px(-6, -21 + bob, 11, 1, outline);
+  px(-6, -22 + bob, 1, 1, outline);
+  px(4, -22 + bob, 1, 1, outline);
 
   // --- Hair ---
-  px(-6, -34, 12, 4, hair);      // hair top block
-  px(-7, -33, 1, 5, hair);       // hair left side
-  px(6, -33, 1, 3, hair);        // hair right side
-  // Hair highlight
-  px(-4, -33, 3, 1, lightenColor(hair, 0.25));
+  px(-6, -34 + bob, 12, 4, hair);
+  px(-7, -33 + bob, 1, 5, hair);
+  px(6, -33 + bob, 1, 3, hair);
+  px(-4, -33 + bob, 3, 1, lightenColor(hair, 0.25));
 
   // --- Eyes ---
-  // Left eye: white + pupil
-  px(-4, -27, 2, 2, white);
-  px(-3, -27, 1, 2, outline);    // pupil
-  // Right eye: white + pupil
-  px(1, -27, 2, 2, white);
-  px(2, -27, 1, 2, outline);     // pupil
+  px(-4, -27 + bob, 2, 2, white);
+  px(-3, -27 + bob, 1, 2, outline);
+  px(1, -27 + bob, 2, 2, white);
+  px(2, -27 + bob, 1, 2, outline);
 
   // --- Mouth ---
-  px(-2, -24, 3, 1, skinShade);
+  px(-2, -24 + bob, 3, 1, skinShade);
 }
 
 // Mini Habbo avatar component for chat bubbles and logs (CSS-based pixel art)
@@ -1412,6 +1406,9 @@ function App() {
               const pos = toScreen(displayX, displayY);
 
               const isSelected = selectedProfile?.id === agent.id;
+              const isWalking = smoothPos && smoothPos.waypoints.length > 0;
+              // Alternate between frame 1 and 2 every 200ms while walking
+              const walkFrame = isWalking ? ((Math.floor(Date.now() / 200) % 2) + 1) : 0;
               
               return (
                 <Container 
@@ -1424,7 +1421,7 @@ function App() {
                 >
                   {/* Habbo-style pixel art avatar */}
                   <Graphics
-                    draw={(g) => drawHabboAvatar(g, agent.avatar.bodyColor)}
+                    draw={(g) => drawHabboAvatar(g, agent.avatar.bodyColor, walkFrame)}
                   />
                   
                   {/* Name label */}
